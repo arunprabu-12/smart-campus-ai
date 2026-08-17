@@ -41,6 +41,15 @@ def on_startup():
         )
     # TODO: use Alembic migrations instead of create_all() once schema stabilizes
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-seed the database on startup (idempotent)
+    from app.database import SessionLocal
+    from app.database_seeder import seed_db
+    db = SessionLocal()
+    try:
+        seed_db(db)
+    finally:
+        db.close()
 
 
 @app.get("/health")
