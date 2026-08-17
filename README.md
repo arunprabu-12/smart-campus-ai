@@ -51,6 +51,47 @@ graph TD
 ```
 
 ### 👩‍🏫 For Staff / Admin
+graph TD
+    Staff[Faculty / Admin] --> Manager[Manager Agent]
+
+    Manager --> A[Assessment Agent]
+    Manager --> E[Evaluation Agent]
+    Manager --> S[Scheduling Agent]
+    Manager --> T[Student Analytics Agent]
+    Manager --> N[Notification Agent]
+
+    A --> DB[(PostgreSQL)]
+    E --> DB
+    S --> DB
+    T --> DB
+    N --> Student[Students]
+    
+Faculty:
+"Create a Unit 3 ML assignment with 5 questions
+and schedule it for Friday."
+
+                ↓
+
+        Manager Agent
+                ↓
+      Assessment Agent
+                ↓
+      Generate Questions
+                ↓
+       Answer Key Created
+                ↓
+       Scheduling Agent
+                ↓
+        Check Calendar
+                ↓
+       Faculty Approval
+                ↓
+      Save to PostgreSQL
+                ↓
+      Notification Agent
+                ↓
+        Notify Students
+        
 *   **Manager AI Agent:** Upload a syllabus or raw question bank, and the Manager Agent autonomously generates a complete test or assignment, schedules it, syncs it to student calendars, and sends out notifications.
 *   **Automated Evaluation:** AI-driven grading mechanisms for assignments and tests.
 *   **Comprehensive Student Tracking:** Monitor attendance, view CGPAs, and identify at-risk students directly from a secure admin panel.
