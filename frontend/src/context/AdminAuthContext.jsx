@@ -5,7 +5,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const AdminAuthContext = createContext(null)
 
 const adminApi = axios.create({ baseURL: BASE_URL })
