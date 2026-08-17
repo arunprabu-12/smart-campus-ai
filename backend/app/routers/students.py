@@ -122,8 +122,8 @@ def get_peer_matches(
     for p in peers:
         matches.append({
             "id": p.id,
-            "name": p.name,
-            "email": p.email,
+            "name": p.full_name,
+            "email": p.college_email,
             "match_score": "92%",
             "reason": f"Strong in topics you need help with (e.g. Data Structures)",
             "career_interest": p.career_interest
