@@ -1,6 +1,6 @@
 /** Spec section 1 — holds JWT + current student profile. Wired to real /auth endpoints. */
 import { createContext, useContext, useState, useEffect } from 'react'
-import { loginStudent } from '../api/auth'
+import { loginStudent, registerStudent } from '../api/auth'
 import apiClient from '../api/client'
 
 const AuthContext = createContext(null)
@@ -45,7 +45,6 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (payload) => {
-    const { registerStudent } = await import('../api/auth')
     const res = await registerStudent(payload)
     const { access_token } = res.data
     localStorage.setItem('token', access_token)
