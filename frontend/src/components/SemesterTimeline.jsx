@@ -34,9 +34,16 @@ export default function SemesterTimeline({ semesters = [] }) {
               <span className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${cfg.dotClass}`} />
               <span className={`text-sm font-medium ${cfg.textClass}`}>Semester {s.number}</span>
             </div>
-            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${cfg.badgeClass}`}>
-              {cfg.icon} {cfg.label}
-            </span>
+            <div className="flex items-center gap-2">
+              {s.sgpa != null && (
+                <span className="text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 px-2.5 py-0.5 rounded-full">
+                  SGPA: {s.sgpa.toFixed(2)}
+                </span>
+              )}
+              <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${cfg.badgeClass}`}>
+                {cfg.icon} {cfg.label}
+              </span>
+            </div>
           </div>
         )
       })}

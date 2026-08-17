@@ -48,6 +48,44 @@ def get_my_dashboard(
         1,
     )
 
+    # Fetch current semester courses to build assignment and test graphs
+    course_assignment_stats = []
+    course_test_stats = []
+    if current_sem:
+        from app.models.course import Course
+        from app.models.assignment import Assignment, AssignmentSubmission
+        from app.models.test import Test, TestAttempt, TestResult
+        
+        courses = db.query(Course).filter(Course.semester_id == current_sem.id).all()
+        for course in courses:
+            # Assignment stats
+            total_assign = db.query(Assignment).filter(Assignment.course_id == course.id).count()
+            sub_assign = db.query(AssignmentSubmission)\
+                .join(Assignment, AssignmentSubmission.assignment_id == Assignment.id)\
+                .filter(Assignment.course_id == course.id, AssignmentSubmission.student_id == current.id).count()
+            course_assignment_stats.append({
+                "course_code": course.course_code,
+                "course_name": course.course_name,
+                "total": total_assign,
+                "submitted": sub_assign
+            })
+            
+            # Test stats
+            results = db.query(TestResult)\
+                .join(TestAttempt, TestResult.attempt_id == TestAttempt.id)\
+                .join(Test, TestAttempt.test_id == Test.id)\
+                .filter(Test.course_id == course.id, TestAttempt.student_id == current.id).all()
+            
+            avg_score = 0.0
+            if results:
+                avg_score = sum(r.percentage for r in results) / len(results)
+                
+            course_test_stats.append({
+                "course_code": course.course_code,
+                "course_name": course.course_name,
+                "avg_score": round(avg_score, 1)
+            })
+
     return {
         "name": current.full_name,
         "register_number": current.register_number,
@@ -60,6 +98,8 @@ def get_my_dashboard(
         "overall_progress_pct": overall_pct,
         "semester_statuses": semester_statuses,
         "current_semester_progress": current_progress,
+        "course_assignment_stats": course_assignment_stats,
+        "course_test_stats": course_test_stats,
     }
 
 

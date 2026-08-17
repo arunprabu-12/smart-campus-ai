@@ -12,6 +12,88 @@ from app.models.student import Student
 from app.models.admin_user import AdminUser
 from app.auth.security import hash_password
 
+def seed_course_details(db: Session, course):
+    # Seed 5 units
+    units = {}
+    for i in range(1, 6):
+        u = db.query(Unit).filter(Unit.course_id == course.id, Unit.order_index == i).first()
+        if not u:
+            u = Unit(course_id=course.id, title=f"Unit {i}: Advanced {course.course_name} Concepts", order_index=i)
+            db.add(u)
+            db.commit()
+            db.refresh(u)
+        units[i] = u
+
+    # Seed topics
+    topics_data = [
+        (1, f"Introduction to {course.course_name}", f"Fundamental background, history, and basic terminology of {course.course_name}"),
+        (2, f"Core Architecture of {course.course_name}", f"Detailed study of the core methods and algorithms behind {course.course_name}"),
+        (3, f"Design Patterns for {course.course_name}", f"Engineering practices and design principles in real-world {course.course_name}"),
+        (4, f"Evaluation and Benchmarks", f"Standard testing datasets and scoring metrics for {course.course_name}"),
+        (5, f"Industrial Case Studies", f"Reviewing enterprise deployments and future trends of {course.course_name}")
+    ]
+
+    topics = {}
+    for unit_order, title, notes in topics_data:
+        u = units.get(unit_order)
+        if u:
+            t = db.query(Topic).filter(Topic.unit_id == u.id, Topic.title == title).first()
+            if not t:
+                t = Topic(unit_id=u.id, title=title, notes=notes)
+                db.add(t)
+                db.commit()
+                db.refresh(t)
+            topics[title] = t
+
+    # Seed tests
+    tests_data = [
+        ("Unit 1 Practice Test", "Practice"),
+        ("Unit 2 Unit Test", "Unit"),
+        ("Mid-Semester Mock Test", "Mock")
+    ]
+    tests = {}
+    for title, test_type in tests_data:
+        t = db.query(Test).filter(Test.course_id == course.id, Test.title == title).first()
+        if not t:
+            t = Test(course_id=course.id, title=title, test_type=test_type)
+            db.add(t)
+            db.commit()
+            db.refresh(t)
+        tests[title] = t
+
+    # Seed questions for Unit 1 Practice Test
+    practice_test = tests.get("Unit 1 Practice Test")
+    intro_topic = topics.get(f"Introduction to {course.course_name}")
+    if practice_test and intro_topic:
+        questions_data = [
+            (f"What is the primary goal of {course.course_name}?", "MCQ",
+             '["Optimizing performance and efficiency", "Increasing overhead", "Hardcoding static logic", "None of the above"]',
+             "Optimizing performance and efficiency", intro_topic.id),
+            (f"Standard architectures for {course.course_name} are widely adopted in the industry.", "TrueFalse",
+             '["True", "False"]', "True", intro_topic.id),
+        ]
+        for q_text, q_type, options, correct, topic_id in questions_data:
+            q = db.query(Question).filter(Question.test_id == practice_test.id, Question.question_text == q_text).first()
+            if not q:
+                q = Question(test_id=practice_test.id, question_text=q_text, question_type=q_type, options=options, correct_answer=correct, topic_id=topic_id)
+                db.add(q)
+        db.commit()
+
+    # Seed Assignment under Unit 1
+    u1 = units.get(1)
+    if u1:
+        assign = db.query(Assignment).filter(Assignment.course_id == course.id, Assignment.title == f"Assignment 1 — {course.course_name} Basics").first()
+        if not assign:
+            assign = Assignment(
+                course_id=course.id,
+                unit_id=u1.id,
+                title=f"Assignment 1 — {course.course_name} Basics",
+                questions=f'[{{\"text\": \"Describe the primary components of {course.course_name}.\", \"type\": \"short\"}}, {{\"text\": \"List three challenges in deploying {course.course_name}.\", \"type\": \"short\"}}]'
+            )
+            db.add(assign)
+            db.commit()
+
+
 def seed_db(db: Session):
     try:
         # 1. Seed Departments
@@ -69,6 +151,7 @@ def seed_db(db: Session):
         # 4. Seed Courses
         sem_1 = semesters.get(1)
         sem_5 = semesters.get(5)
+        sem_7 = semesters.get(7)
         
         courses_data = []
         if sem_1:
@@ -86,6 +169,12 @@ def seed_db(db: Session):
                 ("CS3504", "Database Management Systems", 4, "Relational and non-relational databases, SQL, transactions", sem_5.id),
                 ("CS3505", "Big Data Analytics", 3, "Hadoop, Spark, and large-scale data processing", sem_5.id)
             ])
+        if sem_7:
+            courses_data.extend([
+                ("CS3701", "Responsible AI", 4, "Ethics, fairness, transparency, and governance in AI systems", sem_7.id),
+                ("CS3702", "Agentic AI", 4, "Autonomous agents, planning, tool usage, and LLM-based agent frameworks", sem_7.id),
+                ("CS3703", "Manufacturing AI", 4, "AI applications in manufacturing, predictive maintenance, quality control, and industrial robotics", sem_7.id)
+            ])
             
         courses = {}
         for code, name, credits, desc, sem_id in courses_data:
@@ -96,6 +185,10 @@ def seed_db(db: Session):
                 db.commit()
                 db.refresh(c)
             courses[code] = c
+            
+            # Auto-populate 5 units, topics, tests, assignments for CS3701, CS3702, CS3703
+            if code in ["CS3701", "CS3702", "CS3703"]:
+                seed_course_details(db, c)
 
         # 5. Seed Units & Topics for Machine Learning (CS3501)
         ml_course = courses.get("CS3501")
@@ -225,12 +318,15 @@ def seed_db(db: Session):
                     department_id=aids_dept.id,
                     regulation_id=reg_2023_obj.id,
                     admission_year=2023,
-                    current_semester=5,
+                    current_semester=7,
                     section="A",
                     career_interest="Machine Learning Engineer",
                     cgpa=8.42
                 )
                 db.add(stud)
+                db.commit()
+            else:
+                stud.current_semester = 7
                 db.commit()
                 
             # Also seed a student with Rajalakshmi email for quick user login
@@ -244,21 +340,24 @@ def seed_db(db: Session):
                     department_id=aids_dept.id,
                     regulation_id=reg_2023_obj.id,
                     admission_year=2023,
-                    current_semester=5,
+                    current_semester=7,
                     section="B",
                     career_interest="Data Science",
                     cgpa=8.95
                 )
                 db.add(rec_stud)
                 db.commit()
+            else:
+                rec_stud.current_semester = 7
+                db.commit()
 
             # Additional students to match local DB
             other_students = [
-                ("Arunachalam", "231801013", "231801013@rajalakshmi.edu.in", "123456789", 5, "A"),
-                ("deepak", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 5, "A"),
-                ("Joseph Vijay", "231801042", "231801042@rajalakshmi.edu.in", "123456789", 5, "B"),
-                ("Harihar", "231801048", "231801048@rajalakshmi.edu.in", "123456789", 5, "B"),
-                ("Jaga", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 5, "A")
+                ("Arunachalam", "231801013", "231801013@rajalakshmi.edu.in", "123456789", 7, "A"),
+                ("deepak", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 7, "A"),
+                ("Joseph Vijay", "231801042", "231801042@rajalakshmi.edu.in", "123456789", 7, "B"),
+                ("Harihar", "231801048", "231801048@rajalakshmi.edu.in", "123456789", 7, "B"),
+                ("Jaga", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 7, "A")
             ]
 
             for name, reg_num, email, pwd, sem, sec in other_students:
@@ -278,6 +377,105 @@ def seed_db(db: Session):
                         cgpa=8.0
                     )
                     db.add(new_s)
+                else:
+                    s_obj.current_semester = 7
+            db.commit()
+
+            # Seed Semester Completion for semesters 1-6 to show GPA trends
+            from app.models.semester_completion import SemesterCompletion
+            import random
+            emails = ["student@rajalakshmi.edu.in", "arjun.kumar@college.edu", "231801013@rajalakshmi.edu.in", "231801027@rajalakshmi.edu.in", "231801042@rajalakshmi.edu.in", "231801048@rajalakshmi.edu.in", "231801062@rajalakshmi.edu.in"]
+            for email in emails:
+                stud_obj = db.query(Student).filter(Student.college_email == email).first()
+                if stud_obj:
+                    for s_num in range(1, 7):
+                        sem_obj = db.query(Semester).filter(Semester.number == s_num, Semester.regulation_id == reg_2023_obj.id).first()
+                        if sem_obj:
+                            comp = db.query(SemesterCompletion).filter(
+                                SemesterCompletion.student_id == stud_obj.id,
+                                SemesterCompletion.semester_id == sem_obj.id
+                            ).first()
+                            if not comp:
+                                comp = SemesterCompletion(
+                                    student_id=stud_obj.id,
+                                    semester_id=sem_obj.id,
+                                    is_completed=True,
+                                    sgpa=round(random.uniform(7.8, 9.4), 2),
+                                    courses_required_pct=100.0,
+                                    topics_required_pct=100.0,
+                                    assignments_required_pct=100.0,
+                                    tests_required_pct=100.0
+                                )
+                                db.add(comp)
+            db.commit()
+
+            # Seed assignments & tests attempts/results for student courses
+            from app.models.assignment import Assignment, AssignmentSubmission
+            from app.models.test import Test, TestAttempt, TestResult
+            from datetime import datetime
+            
+            for email in emails:
+                stud_obj = db.query(Student).filter(Student.college_email == email).first()
+                if stud_obj:
+                    # Let's get courses for the student's current semester (Semester 7)
+                    courses_list = db.query(Course).filter(Course.semester_id == sem_7.id).all()
+                    for course in courses_list:
+                        # Find assignments
+                        assigns = db.query(Assignment).filter(Assignment.course_id == course.id).all()
+                        for i, assign in enumerate(assigns):
+                            # Seed submission for the first assignment
+                            if i == 0:
+                                sub = db.query(AssignmentSubmission).filter(
+                                    AssignmentSubmission.assignment_id == assign.id,
+                                    AssignmentSubmission.student_id == stud_obj.id
+                                ).first()
+                                if not sub:
+                                    sub = AssignmentSubmission(
+                                        assignment_id=assign.id,
+                                        student_id=stud_obj.id,
+                                        answers='{"1": "Decentralized autonomous framework.", "2": "Data scarcity."}',
+                                        status="Evaluated",
+                                        score=85,
+                                        submitted_at=datetime.utcnow()
+                                    )
+                                    db.add(sub)
+                                    
+                        # Find tests
+                        tests_list = db.query(Test).filter(Test.course_id == course.id).all()
+                        for test in tests_list:
+                            att = db.query(TestAttempt).filter(
+                                TestAttempt.test_id == test.id,
+                                TestAttempt.student_id == stud_obj.id
+                            ).first()
+                            if not att:
+                                att = TestAttempt(
+                                    test_id=test.id,
+                                    student_id=stud_obj.id,
+                                    attempt_number=1,
+                                    started_at=datetime.utcnow(),
+                                    submitted_at=datetime.utcnow(),
+                                    time_taken_seconds=300
+                                )
+                                db.add(att)
+                                db.commit()
+                                db.refresh(att)
+                                
+                                # score based on course code
+                                pct = 80.0
+                                if "CS3702" in course.course_code:
+                                    pct = 90.0
+                                elif "CS3703" in course.course_code:
+                                    pct = 70.0
+                                    
+                                res = TestResult(
+                                    attempt_id=att.id,
+                                    score=float(pct/10),
+                                    total_questions=10,
+                                    correct_answers=int(pct/10),
+                                    wrong_answers=10 - int(pct/10),
+                                    percentage=pct
+                                )
+                                db.add(res)
             db.commit()
 
         # 9. Seed Admin / Staff User

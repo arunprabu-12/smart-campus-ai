@@ -6,7 +6,7 @@ import { getCoursesForSemester } from '../api/courses'
 import ProgressBar from '../components/ProgressBar'
 import SemesterTimeline from '../components/SemesterTimeline'
 import CourseCard from '../components/CourseCard'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts'
 
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null)
@@ -142,6 +142,51 @@ export default function Dashboard() {
                   <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
                   <Line type="monotone" dataKey="sgpa" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                 </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Course Graphs Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Assignment Progress Graph */}
+        {dashboard?.course_assignment_stats && dashboard.course_assignment_stats.length > 0 && (
+          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Assignment Submission Status</h3>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dashboard.course_assignment_stats} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis dataKey="course_name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="submitted" name="Submitted" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" name="Total Assigned" fill="#1e293b" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Test Performance Graph */}
+        {dashboard?.course_test_stats && dashboard.course_test_stats.length > 0 && (
+          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Average Test Scores (%)</h3>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dashboard.course_test_stats} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis dataKey="course_name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
+                  <Bar dataKey="avg_score" name="Average Score" fill="#10b981" radius={[4, 4, 0, 0]}>
+                    {dashboard.course_test_stats.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.avg_score >= 75 ? '#10b981' : '#f59e0b'} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>

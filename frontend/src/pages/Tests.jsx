@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSearchParams } from 'react-router-dom'
+import { getDashboard } from '../api/students'
+import { getCoursesForSemester } from '../api/courses'
 import { getTests } from '../api/tests'
 import TestRunner from '../components/TestRunner'
 
@@ -21,10 +23,33 @@ export default function Tests() {
   const [selectedTest, setSelectedTest] = useState(null)
   const [lastResult, setLastResult] = useState(null)
   const [lastAttemptId, setLastAttemptId] = useState(null)
-  const [courseId, setCourseId] = useState(searchParams.get('courseId') || 5)
+  const [courses, setCourses] = useState([])
+  const [courseId, setCourseId] = useState(searchParams.get('courseId') || '')
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const dashRes = await getDashboard()
+        const semesterStatus = dashRes.data.semester_statuses?.find(
+          (s) => s.status === 'in_progress'
+        )
+        if (semesterStatus?.semester_id) {
+          const courseRes = await getCoursesForSemester(semesterStatus.semester_id)
+          setCourses(courseRes.data)
+          if (!searchParams.get('courseId') && courseRes.data.length > 0) {
+            setCourseId(courseRes.data[0].id)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load courses', err)
+      }
+    }
+    fetchCourses()
+  }, [])
+
   const load = async () => {
+    if (!courseId) return
     setLoading(true)
     try {
       const res = await getTests(courseId)
@@ -62,12 +87,19 @@ export default function Tests() {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tests</h2>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 dark:text-gray-400">Course ID:</label>
-          <input
-            type="number" min={1} value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
-            className="w-20 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white"
-          />
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Course:</label>
+          <select
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Select a course...</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.course_name} ({c.course_code})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -55,8 +55,8 @@ export default function UploadDocuments() {
             onChange={(e) => setDocType(e.target.value)}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {['syllabus', 'regulation', 'calendar', 'handbook', 'examination_rules', 'other'].map((t) => (
-              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+            {['notes', 'ai_notes', 'syllabus', 'regulation', 'calendar', 'handbook', 'examination_rules', 'other'].map((t) => (
+              <option key={t} value={t}>{t.replace('_', ' ').toUpperCase()}</option>
             ))}
           </select>
         </div>
