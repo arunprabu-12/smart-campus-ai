@@ -252,6 +252,34 @@ def seed_db(db: Session):
                 db.add(rec_stud)
                 db.commit()
 
+            # Additional students to match local DB
+            other_students = [
+                ("Arunachalam", "231801013", "231801013@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("deepak", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("Joseph Vijay", "231801042", "231801042@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("Harihar", "231801048", "231801048@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("Jaga", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 5, "A")
+            ]
+
+            for name, reg_num, email, pwd, sem, sec in other_students:
+                s_obj = db.query(Student).filter(Student.college_email == email).first()
+                if not s_obj:
+                    new_s = Student(
+                        full_name=name,
+                        register_number=reg_num,
+                        college_email=email,
+                        password_hash=hash_password(pwd),
+                        department_id=aids_dept.id,
+                        regulation_id=reg_2023_obj.id,
+                        admission_year=2023,
+                        current_semester=sem,
+                        section=sec,
+                        career_interest="Software Engineering",
+                        cgpa=8.0
+                    )
+                    db.add(new_s)
+            db.commit()
+
         # 9. Seed Admin / Staff User
         admin_user = db.query(AdminUser).filter(AdminUser.email == "admin@college.edu").first()
         if not admin_user:

@@ -1,11 +1,12 @@
 /** Spec section 1 — full registration form with all 10 fields. */
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { registerStudent } from '../api/auth'
+import { useAuth } from '../context/AuthContext'
 import { getDepartments, getRegulations } from '../api/admin'
 
 export default function Register() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [form, setForm] = useState({
     full_name: '',
     register_number: '',
@@ -45,8 +46,7 @@ export default function Register() {
         admission_year: parseInt(form.admission_year),
         current_semester: parseInt(form.current_semester),
       }
-      const res = await registerStudent(payload)
-      localStorage.setItem('token', res.data.access_token)
+      await register(payload)
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed. Please check your details.')

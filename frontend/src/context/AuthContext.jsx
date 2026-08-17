@@ -44,6 +44,15 @@ export function AuthProvider({ children }) {
     await fetchProfile(access_token)
   }
 
+  const register = async (payload) => {
+    const { registerStudent } = await import('../api/auth')
+    const res = await registerStudent(payload)
+    const { access_token } = res.data
+    localStorage.setItem('token', access_token)
+    setToken(access_token)
+    await fetchProfile(access_token)
+  }
+
   const logout = () => {
     setToken(null)
     setStudent(null)
@@ -51,7 +60,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ token, student, login, logout, loading }}>
+    <AuthContext.Provider value={{ token, student, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )
