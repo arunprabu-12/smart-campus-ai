@@ -1,0 +1,380 @@
+{
+  "name": "StaffOperationsManager",
+  "state": {
+    "type": "json_schema",
+    "json_schema": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "course": {
+          "type": "string"
+        },
+        "test_id": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "student_id": {
+          "type": "string"
+        },
+        "confirmation": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "details": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "grade": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "course": {
+                  "type": "string"
+                },
+                "students_notified": {
+                  "type": "integer"
+                }
+              }
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "num_questions": {
+          "type": "integer"
+        },
+        "score_percent": {
+          "type": "number"
+        },
+        "uploaded_file": {
+          "type": "string"
+        },
+        "parsed_answers": {
+          "type": "string"
+        },
+        "correct_answers": {
+          "type": "string"
+        },
+        "student_answers": {
+          "type": "string"
+        },
+        "parsed_questions": {
+          "type": "string"
+        },
+        "generated_answers": {
+          "type": "string"
+        },
+        "students_notified": {
+          "type": "integer"
+        },
+        "generated_questions": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "schema": "crewai.flow/v1",
+  "methods": {
+    "confirm_schedule": {
+      "do": {
+        "call": "expression",
+        "expr": "{'action': state.action, 'status': 'success', 'message': 'Assessment successfully scheduled, calendar updated, and students notified.', 'details': {'course': state.course, 'date': state.date}}"
+      },
+      "start": false,
+      "listen": "save_and_schedule_manual",
+      "router": false,
+      "description": "Builds and returns the structured confirmation message for the manual upload scheduling path."
+    },
+    "compare_and_score": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Compare student answers against the correct answer key, calculate a percentage score, and assign a letter grade.",
+          "role": "Assessment Grader",
+          "input": "Compare the student's answers to the correct answer key and calculate the score.\n\nStudent answers: ${state.student_answers}\n\nCorrect answer key: ${outputs.retrieve_answer_key.raw}\n\nSteps:\n1. Compare each student answer to the corresponding correct answer.\n2. Calculate the percentage score: (correct answers / total questions) * 100.\n3. Assign a letter grade: A (90-100%), B (80-89%), C (70-79%), D (60-69%), F (below 60%).\n4. Return a JSON object with 'score_percent' (number) and 'grade' (letter string).\n\nExpected output: A JSON object with 'score_percent' (a number from 0-100) and 'grade' (a letter grade string: A, B, C, D, or F).",
+          "verbose": true,
+          "backstory": "You are a precise and fair grading specialist. You systematically compare student responses to the answer key, calculate the percentage of correct answers, and assign standard letter grades (A: 90-100%, B: 80-89%, C: 70-79%, D: 60-69%, F: below 60%). You always return results in structured JSON.",
+          "llm": "openai/gpt-4o-mini"
+        }
+      },
+      "start": false,
+      "listen": "retrieve_answer_key",
+      "router": false,
+      "description": "Compares student answers to the correct answer key, calculates the percentage score, and converts it to a letter grade."
+    },
+    "confirm_generated": {
+      "do": {
+        "call": "expression",
+        "expr": "{'action': state.action, 'status': 'success', 'message': 'Assessment successfully generated, saved, calendar updated, and students notified.', 'details': {'course': state.course, 'date': state.date, 'topic': state.topic, 'difficulty': state.difficulty, 'questions_created': state.num_questions}}"
+      },
+      "start": false,
+      "listen": "save_and_schedule_generated",
+      "router": false,
+      "description": "Builds and returns the structured confirmation message for the AI generate path."
+    },
+    "receive_and_route": {
+      "do": {
+        "call": "expression",
+        "expr": "state.action == 'schedule_test' || state.action == 'schedule_assignment' ? 'manual_upload' : (state.action == 'generate_test' || state.action == 'generate_assignment' ? 'ai_generate' : 'auto_evaluate')"
+      },
+      "emit": [
+        "manual_upload",
+        "ai_generate",
+        "auto_evaluate"
+      ],
+      "start": true,
+      "router": true,
+      "description": "Receives the staff request and routes it to the correct path: manual upload, AI generate, or auto-evaluate."
+    },
+    "confirm_evaluation": {
+      "do": {
+        "call": "expression",
+        "expr": "{'action': 'evaluate', 'status': 'success', 'message': 'Student evaluation complete. Grade saved and student notified.', 'details': {'student_id': state.student_id, 'test_id': state.test_id}}"
+      },
+      "start": false,
+      "listen": "save_grade_and_notify_student",
+      "router": false,
+      "description": "Builds and returns the structured confirmation message for the auto-evaluation path."
+    },
+    "generate_questions": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Generate high-quality educational assessment questions and answers tailored to the specified topic, difficulty level, and question count.",
+          "role": "AI Question Generator",
+          "input": "Generate ${state.num_questions} questions for the topic '${state.topic}' at difficulty level '${state.difficulty}'. Return a JSON object with two keys: 'questions' (a list of question strings) and 'answers' (a list of corresponding correct answer strings). Ensure questions are appropriate for the difficulty level and cover the topic comprehensively.\n\nExpected output: A JSON object with 'questions' and 'answers' arrays, each containing exactly ${state.num_questions} items.",
+          "verbose": true,
+          "backstory": "You are an experienced educator and curriculum designer. You craft well-structured, pedagogically sound questions that accurately assess student knowledge at the specified difficulty level. You always return questions in a clear, structured JSON format.",
+          "llm": "openai/gpt-4o-mini"
+        }
+      },
+      "start": false,
+      "listen": "ai_generate",
+      "router": false,
+      "description": "AI-generates questions and answers for a test or assignment based on topic, difficulty, and number of questions."
+    },
+    "parse_uploaded_file": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Extract all questions and their corresponding answers or rubric from an uploaded test or assignment file.",
+          "role": "Assessment File Parser",
+          "input": "Parse the following uploaded assessment file and extract all questions along with their answers or rubric. Return a JSON object with two keys: 'questions' (a list of question strings) and 'answers' (a list of corresponding answer or rubric strings). File content: ${state.uploaded_file}\n\nExpected output: A JSON object with 'questions' and 'answers' arrays extracted from the uploaded file.",
+          "tools": [
+            "crewai_tools:PDFSearchTool",
+            "crewai_tools:DOCXSearchTool",
+            "crewai_tools:FileReadTool"
+          ],
+          "verbose": true,
+          "backstory": "You are an expert at reading and parsing educational assessment files in various formats (PDF, DOCX, TXT). You extract structured question-and-answer or question-and-rubric pairs with precision.",
+          "llm": "openai/gpt-4o-mini"
+        }
+      },
+      "start": false,
+      "listen": "manual_upload",
+      "router": false,
+      "description": "Parses the uploaded test or assignment file to extract questions and answers/rubric."
+    },
+    "retrieve_answer_key": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "goal": "Retrieve the correct answer key for a given test from the database.",
+          "role": "Answer Key Retriever",
+          "input": "Retrieve the answer key for test ID '${state.test_id}' from the database. Return the result as a JSON object with a key 'correct_answers' containing a list of the correct answer strings in question order.\n\nExpected output: A JSON object with a 'correct_answers' key containing an ordered list of correct answer strings for test ID ${state.test_id}.",
+          "verbose": true,
+          "backstory": "You are a database specialist responsible for fetching stored assessment answer keys accurately and efficiently. You always return the answer key in a structured JSON format.",
+          "llm": "openai/gpt-4o-mini"
+        }
+      },
+      "start": false,
+      "listen": "auto_evaluate",
+      "router": false,
+      "description": "Fetches the correct answer key for the submitted test from the database."
+    },
+    "save_and_schedule_manual": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "save_assessment",
+              "agent": "db_agent",
+              "description": "Save the parsed assessment to the database. Course: {course}. Due date: {date}. Assessment type: {action}. Parsed content: {parsed_content}. Confirm the save was successful and return the number of questions stored.",
+              "expected_output": "Confirmation that the assessment was saved, including number of questions stored."
+            },
+            {
+              "name": "update_calendar",
+              "agent": "calendar_agent",
+              "description": "Create a calendar event for the assessment due date. Course: {course}. Date: {date}. Action type: {action}. Create a Google Calendar event titled '{action} due - {course}' on {date}. Confirm the event was created.",
+              "expected_output": "Confirmation that the calendar event was created with the correct title and date."
+            },
+            {
+              "name": "notify_students",
+              "agent": "email_agent",
+              "description": "Send an email to all students enrolled in course '{course}' announcing the scheduled assessment. Course: {course}. Due date: {date}. Action: {action}. The email should clearly state the assessment type, course name, and due date. Return the number of students notified.",
+              "expected_output": "Confirmation that emails were sent to all enrolled students, with the count of students notified."
+            }
+          ],
+          "agents": {
+            "db_agent": {
+              "goal": "Save assessment data to the database accurately.",
+              "role": "Assessment Database Manager",
+              "verbose": true,
+              "backstory": "You are a reliable database manager who ensures all assessment data — including questions and answers — is stored correctly and confirmed before proceeding.",
+              "llm": "openai/gpt-4o-mini"
+            },
+            "email_agent": {
+              "apps": [
+                "gmail/send_email"
+              ],
+              "goal": "Send clear, timely email notifications to all students in a course.",
+              "role": "Student Communication Specialist",
+              "verbose": true,
+              "backstory": "You craft professional, student-friendly emails announcing tests and assignments, ensuring every enrolled student is notified with the correct details.",
+              "llm": "openai/gpt-4o-mini"
+            },
+            "calendar_agent": {
+              "apps": [
+                "googlecalendar/create_event"
+              ],
+              "goal": "Sync assessment due dates to the course calendar.",
+              "role": "Course Calendar Coordinator",
+              "verbose": true,
+              "backstory": "You manage course scheduling and calendar events, ensuring all test and assignment dates are accurately reflected so students and staff are always informed.",
+              "llm": "openai/gpt-4o-mini"
+            }
+          },
+          "inputs": {
+            "date": "${state.date}",
+            "action": "${state.action}",
+            "course": "${state.course}",
+            "parsed_content": "${outputs.parse_uploaded_file.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "parse_uploaded_file",
+      "router": false,
+      "description": "Saves the parsed assessment to the database, updates the course calendar, and emails all students about the scheduled test or assignment. Runs after a manual file upload is parsed."
+    },
+    "save_and_schedule_generated": {
+      "do": {
+        "call": "crew",
+        "with": {
+          "tasks": [
+            {
+              "name": "save_assessment",
+              "agent": "db_agent",
+              "description": "Save the AI-generated assessment to the database. Course: {course}. Due date: {date}. Topic: {topic}. Difficulty: {difficulty}. Number of questions: {num_questions}. Generated questions and answers: {generated_content}. Confirm the save was successful.",
+              "expected_output": "Confirmation that the AI-generated assessment was saved, including number of questions stored."
+            },
+            {
+              "name": "update_calendar",
+              "agent": "calendar_agent",
+              "description": "Create a calendar event for the assessment due date. Course: {course}. Date: {date}. Action type: {action}. Topic: {topic}. Create a Google Calendar event for the assessment on {date}. Confirm the event was created.",
+              "expected_output": "Confirmation that the calendar event was created with the correct title and date."
+            },
+            {
+              "name": "notify_students",
+              "agent": "email_agent",
+              "description": "Send an email to all students enrolled in course {course} announcing the new AI-generated assessment. Course: {course}. Due date: {date}. Action: {action}. Topic: {topic}. Difficulty: {difficulty}. Number of questions: {num_questions}. The email should clearly state the assessment type, topic, difficulty, question count, and due date. Return the number of students notified.",
+              "expected_output": "Confirmation that emails were sent to all enrolled students, with the count of students notified."
+            }
+          ],
+          "agents": {
+            "db_agent": {
+              "goal": "Save generated assessment data to the database accurately.",
+              "role": "Assessment Database Manager",
+              "verbose": true,
+              "backstory": "You are a reliable database manager who ensures all AI-generated assessment data is stored correctly and confirmed before proceeding.",
+              "llm": "openai/gpt-4o-mini"
+            },
+            "email_agent": {
+              "apps": [
+                "gmail/send_email"
+              ],
+              "goal": "Send clear, timely email notifications to all students in a course.",
+              "role": "Student Communication Specialist",
+              "verbose": true,
+              "backstory": "You craft professional, student-friendly emails announcing tests and assignments, ensuring every enrolled student is notified with the correct details.",
+              "llm": "openai/gpt-4o-mini"
+            },
+            "calendar_agent": {
+              "apps": [
+                "googlecalendar/create_event"
+              ],
+              "goal": "Sync assessment due dates to the course calendar.",
+              "role": "Course Calendar Coordinator",
+              "verbose": true,
+              "backstory": "You manage course scheduling and calendar events, ensuring all test and assignment dates are accurately reflected so students and staff are always informed.",
+              "llm": "openai/gpt-4o-mini"
+            }
+          },
+          "inputs": {
+            "date": "${state.date}",
+            "topic": "${state.topic}",
+            "action": "${state.action}",
+            "course": "${state.course}",
+            "difficulty": "${state.difficulty}",
+            "num_questions": "${state.num_questions}",
+            "generated_content": "${outputs.generate_questions.raw}"
+          },
+          "verbose": true
+        }
+      },
+      "start": false,
+      "listen": "generate_questions",
+      "router": false,
+      "description": "Saves the AI-generated assessment to the database, updates the course calendar, and emails all students about the new test or assignment. Runs after AI question generation."
+    },
+    "save_grade_and_notify_student": {
+      "do": {
+        "call": "agent",
+        "with": {
+          "apps": [
+            "gmail/send_email"
+          ],
+          "goal": "Save the student's grade to the database and send the student a clear email notification with their score and grade.",
+          "role": "Grade Recorder and Student Notifier",
+          "input": "Complete the evaluation process for student '${state.student_id}' on test '${state.test_id}'.\n\nGrading result: ${outputs.compare_and_score.raw}\n\n1. Record the grade in the database (student_id: ${state.student_id}, test_id: ${state.test_id}, with the score and grade from the grading result).\n2. Send an email to student '${state.student_id}' informing them of their test result. The email should include:\n   - Their score percentage\n   - Their letter grade\n   - A brief, encouraging message\n\nReturn a JSON object: {\"status\": \"evaluated\", \"score\": <score_percent>, \"grade\": \"<letter_grade>\"}\n\nExpected output: Confirmation that the grade was saved and the email was sent, plus a JSON summary with status, score, and grade.",
+          "verbose": true,
+          "backstory": "You are responsible for the final step in the evaluation process: persisting grades and keeping students informed. You send friendly, clear emails that include the student's score percentage and letter grade, and you ensure all records are saved accurately.",
+          "llm": "openai/gpt-4o-mini"
+        }
+      },
+      "start": false,
+      "listen": "compare_and_score",
+      "router": false,
+      "description": "Saves the student's grade to the database and sends them an email with their score and grade."
+    }
+  },
+  "description": "Handles all staff operations: schedule tests/assignments via manual upload or AI generation, and auto-evaluate student submissions with grading and notifications."
+}
