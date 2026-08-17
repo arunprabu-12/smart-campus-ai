@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine, check_db_connection
-from app.routers import auth, students, courses, assignments, tests, results, advisor, admin, study_plan, attendance, admin_auth, search
+from app.routers import auth, students, courses, assignments, tests, results, advisor, admin, study_plan, attendance, admin_auth, search, question_bank
 
 app = FastAPI(title="AI Academic Platform API")
 
@@ -30,6 +30,7 @@ app.include_router(study_plan.router)
 app.include_router(attendance.router)
 app.include_router(admin_auth.router)
 app.include_router(search.router)
+app.include_router(question_bank.router)
 
 @app.on_event("startup")
 def on_startup():

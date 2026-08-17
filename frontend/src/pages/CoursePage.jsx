@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getCourse, getCourseProgress, markTopicComplete, getCourseVideos } from '../api/courses'
 import ProgressBar from '../components/ProgressBar'
 import VideoCard from '../components/VideoCard'
+import apiClient from '../api/client'
 
 function TopicRow({ topic, unitTitle, courseId, onComplete }) {
   const [done, setDone] = useState(false)
@@ -92,6 +93,7 @@ export default function CoursePage() {
   const [progress, setProgress] = useState({ progress_pct: 0, completed: 0, total: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [docBank, setDocBank] = useState([])
 
   const loadProgress = async () => {
     try {
@@ -105,6 +107,12 @@ export default function CoursePage() {
       try {
         const [cRes] = await Promise.all([getCourse(courseId), loadProgress()])
         setCourse(cRes.data)
+        
+        // Fetch document bank as fallback
+        try {
+          const docRes = await apiClient.get('/question-bank/assignments')
+          setDocBank(docRes.data || [])
+        } catch(e) {}
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to load course.')
       } finally {
@@ -172,10 +180,42 @@ export default function CoursePage() {
       </div>
 
       {/* Units and topics */}
-      {course.units?.length === 0 && (
+      {course.units?.length === 0 && docBank.length > 0 && (
+        <div className="space-y-4">
+          <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200">
+            <strong>Note:</strong> Database units are empty. Populating course content directly from Document Bank.
+          </div>
+          {docBank.map((cDoc, idx) => (
+             <div key={idx} className="space-y-4">
+               {cDoc.units.map((unit, uIdx) => (
+                 <div key={uIdx} className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+                   <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                     <h3 className="font-semibold text-gray-900 dark:text-white">{cDoc.course_name}: {unit.unit_name}</h3>
+                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{unit.questions.length} topics</p>
+                   </div>
+                   <div className="p-4 space-y-3">
+                     {unit.questions.map((q, qIdx) => (
+                       <TopicRow
+                         key={qIdx}
+                         topic={{ id: `doc-${qIdx}`, title: q.text, notes: q.answer }}
+                         unitTitle={unit.unit_name}
+                         courseId={courseId}
+                         onComplete={() => {}}
+                       />
+                     ))}
+                   </div>
+                 </div>
+               ))}
+             </div>
+          ))}
+        </div>
+      )}
+
+      {course.units?.length === 0 && docBank.length === 0 && (
         <p className="text-sm text-gray-500 dark:text-gray-400">No units added yet.</p>
       )}
-      {course.units?.map((unit) => (
+
+      {course.units?.length > 0 && course.units.map((unit) => (
         <div key={unit.id} className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
           <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <h3 className="font-semibold text-gray-900 dark:text-white">{unit.title}</h3>

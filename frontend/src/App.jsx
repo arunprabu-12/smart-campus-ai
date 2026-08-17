@@ -8,6 +8,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Sidebar from './components/Sidebar.jsx'
 import TopNav from './components/TopNav.jsx'
+import Footer from './components/Footer.jsx'
 
 import Dashboard from './pages/Dashboard.jsx'
 import CoursePage from './pages/CoursePage.jsx'
@@ -25,6 +26,7 @@ import TestReport from './pages/TestReport.jsx'
 import AdminLogin from './pages/Admin/AdminLogin.jsx'
 import AdminPanel from './pages/Admin/AdminPanel.jsx'
 import AgentsHub from './pages/AgentsHub.jsx'
+import Simulator from './pages/Simulator.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
 import { useAdminAuth } from './context/AdminAuthContext'
 
@@ -66,8 +68,9 @@ function AppLayout({ children }) {
       <Sidebar />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <TopNav />
-        <main style={{ flex: 1, overflowY: 'auto' }}>
+        <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           {children}
+          <Footer />
         </main>
       </div>
     </div>
@@ -103,6 +106,7 @@ export default function App() {
       <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
       <Route path="/attendance" element={<RequireAuth><AppLayout><Attendance /></AppLayout></RequireAuth>} />
       <Route path="/agents" element={<RequireAuth><AppLayout><AgentsHub /></AppLayout></RequireAuth>} />
+      <Route path="/simulator" element={<RequireAuth><AppLayout><Simulator /></AppLayout></RequireAuth>} />
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />

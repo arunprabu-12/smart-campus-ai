@@ -6,6 +6,7 @@ import { getDashboard } from '../api/students'
 import { getCoursesForSemester } from '../api/courses'
 import { getTests } from '../api/tests'
 import TestRunner from '../components/TestRunner'
+import apiClient from '../api/client'
 
 const TYPE_COLORS = {
   'Practice': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
@@ -26,6 +27,27 @@ export default function Tests() {
   const [courses, setCourses] = useState([])
   const [courseId, setCourseId] = useState(searchParams.get('courseId') || '')
   const navigate = useNavigate()
+
+  const [viewMode, setViewMode] = useState('db')
+  const [docBank, setDocBank] = useState([])
+  const [loadingDoc, setLoadingDoc] = useState(false)
+
+  const loadDocBank = async () => {
+    if (docBank.length > 0) return;
+    setLoadingDoc(true)
+    try {
+      const res = await apiClient.get('/question-bank/tests')
+      setDocBank(res.data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingDoc(false)
+    }
+  }
+
+  useEffect(() => {
+    if (viewMode === 'doc') loadDocBank()
+  }, [viewMode])
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -85,7 +107,23 @@ export default function Tests() {
     <div className="flex justify-center w-full">
       <div className="space-y-6 w-full max-w-3xl px-4 md:px-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tests</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tests</h2>
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+              <button 
+                onClick={() => setViewMode('db')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'db' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              >
+                Database
+              </button>
+              <button 
+                onClick={() => setViewMode('doc')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'doc' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              >
+                Document Bank
+              </button>
+            </div>
+          </div>
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Course:</label>
           <select
@@ -129,38 +167,87 @@ export default function Tests() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
-      ) : tests.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          <p className="text-4xl mb-3">📝</p>
-          <p>No tests found for this course.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {tests.map((test) => (
-            <div key={test.id} className="p-5 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{test.title}</h3>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[test.test_type] || 'bg-gray-100 text-gray-600'}`}>
-                    {test.test_type}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {test.questions?.length || 0} questions
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedTest(test)}
-                id={`start-test-${test.id}`}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Start Test
-              </button>
+      {viewMode === 'doc' ? (
+        loadingDoc ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
+        ) : docBank.length === 0 ? (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">No tests extracted from document.</div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 p-4 rounded-xl text-sm border border-purple-100 dark:border-purple-800">
+              ℹ️ These test questions are fetched directly from <b>AI_DS_Assignment_Question_Bank_Set_2-1.docx</b>
             </div>
-          ))}
-        </div>
+            {docBank.map((course, idx) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.course_name} Test Bank</h3>
+                </div>
+                <div className="p-6 space-y-8">
+                  {course.units.map((unit, uIdx) => (
+                    <div key={uIdx} className="space-y-4">
+                      <h4 className="font-semibold text-purple-600 dark:text-purple-400 border-b border-gray-100 dark:border-gray-700 pb-2">{unit.unit_name}</h4>
+                      <div className="space-y-4">
+                        {unit.questions.map((q, qIdx) => (
+                          <div key={qIdx} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl">
+                            <p className="font-medium text-gray-800 dark:text-gray-200 mb-3">{qIdx + 1}. {q.text}</p>
+                            {q.options && q.options.length > 0 && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                                {q.options.map((opt, oIdx) => (
+                                  <div key={oIdx} className={`p-2 rounded-lg text-sm border ${q.answer && opt.startsWith(q.answer) ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                                    {opt}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {q.type === 'Descriptive' && (
+                              <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 text-sm rounded-lg border border-purple-100 dark:border-purple-800">
+                                <span className="font-semibold">Expected Answer: </span>{q.answer}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        loading ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
+        ) : tests.length === 0 ? (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            <p className="text-4xl mb-3">📝</p>
+            <p>No tests found for this course.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {tests.map((test) => (
+              <div key={test.id} className="p-5 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{test.title}</h3>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[test.test_type] || 'bg-gray-100 text-gray-600'}`}>
+                      {test.test_type}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {test.questions?.length || 0} questions
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedTest(test)}
+                  id={`start-test-${test.id}`}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Start Test
+                </button>
+              </div>
+            ))}
+          </div>
+        )
       )}
       </div>
     </div>

@@ -12,6 +12,7 @@ const links = [
   { to: '/attendance', label: 'Attendance', icon: '✅' },
   { to: '/advisor', label: 'AI Advisor', icon: '🤖' },
   { to: '/agents', label: 'AI Agents Hub', icon: '✨' },
+  { to: '/simulator', label: 'Simulator', icon: '⚙️' },
   { to: '/journey', label: 'Academic Journey', icon: '🎓' },
   // Profile is NOT here — access only via TopNav avatar icon
 ]
