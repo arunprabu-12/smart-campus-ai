@@ -1,9 +1,8 @@
-/** Spec section 1 — Login page wired to AuthContext. */
+/** Light-theme Login — two-column layout (branding left, form right) */
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAdminAuth } from '../context/AdminAuthContext'
-import Footer from '../components/Footer'
 
 export default function Login() {
   const { login: studentLogin } = useAuth()
@@ -25,7 +24,7 @@ export default function Login() {
         navigate('/')
       } else {
         await adminLogin(email, password)
-        navigate('/admin-panel')
+        navigate('/admin')
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.')
@@ -34,90 +33,110 @@ export default function Login() {
     }
   }
 
+  const inputCls = 'w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition'
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🎓</div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Academic Platform</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your complete academic journey</p>
+    <div className="min-h-screen bg-slate-50 flex">
+
+      {/* ── LEFT brand panel ── */}
+      <div className="hidden lg:flex lg:w-[42%] bg-blue-50 border-r border-blue-100 flex-col items-center justify-center px-12 py-16 gap-8">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-3xl shadow-md">🎓</div>
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold text-blue-700 tracking-tight">Smart Academia</h1>
+            <p className="text-sm text-slate-500 mt-0.5">AI-Powered College Academic Platform</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          
-          <div className="flex justify-center space-x-4 mb-4">
-            {['student', 'staff', 'admin'].map((r) => (
-              <label key={r} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="role"
-                  value={r}
-                  checked={role === r}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                  {r}
-                </span>
-              </label>
+        <p className="text-slate-600 text-sm text-center max-w-xs leading-relaxed font-medium">
+          "Empowering smarter academic journeys with AI."
+        </p>
+
+        {/* Floating feature cards */}
+        <div className="w-full max-w-xs space-y-3">
+          {[['🤖', 'AI Academic Advisor', 'Personalized guidance for every student.'],
+            ['📅', 'Smart Study Planner', 'AI-generated weekly study schedules.'],
+            ['📚', 'RAG Study Assistant', 'Answer any syllabus question instantly.']
+          ].map(([icon, title, desc]) => (
+            <div key={title} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-start gap-3">
+              <span className="text-xl">{icon}</span>
+              <div>
+                <p className="text-sm font-bold text-slate-800">{title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RIGHT form panel ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-8">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg">🎓</div>
+          <span className="text-lg font-extrabold text-blue-600">Smart Academia</span>
+        </div>
+
+        <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-8">
+          {/* Heading */}
+          <div className="mb-7">
+            <h2 className="text-2xl font-extrabold text-slate-900">Welcome Back 👋</h2>
+            <p className="text-sm text-slate-600 mt-1">Continue your academic journey with Smart Academia.</p>
+          </div>
+
+          {/* Role Tabs */}
+          <div className="flex rounded-xl bg-slate-100 p-1 mb-6 gap-1">
+            {['student', 'admin'].map(r => (
+              <button
+                key={r}
+                onClick={() => setRole(r)}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${role === r ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                {r === 'student' ? '🎓 Student' : '⚙️ Admin'}
+              </button>
             ))}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="student@college.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3 text-sm text-red-700 dark:text-red-400">
-              {error}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">College Email</label>
+              <input id="login-email" type="email" required className={inputCls} placeholder="student@college.edu" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
-          )}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Password</label>
+              <input id="login-password" type="password" required className={inputCls} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+            </div>
 
-          <button
-            id="login-submit"
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg py-2.5 text-sm font-medium transition-colors"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-xs text-red-700">
+                {error}
+              </div>
+            )}
 
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline font-medium">
-            Register here
-          </Link>
-        </p>
+            <button
+              id="login-submit"
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3 text-sm font-bold transition-all shadow-sm mt-1"
+            >
+              {loading ? 'Signing in…' : 'Sign In →'}
+            </button>
+          </form>
 
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-xs text-blue-700 dark:text-blue-300">
-          <strong>Demo:</strong> arjun.kumar@college.edu / Student@123
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-blue-600 hover:underline font-semibold">Register</Link>
+          </p>
+
+          <div className="mt-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
+            <strong>Demo:</strong> arjun.kumar@college.edu / Student@123
+          </div>
         </div>
+
+        <Link to="/welcome" className="mt-6 text-xs text-slate-400 hover:text-blue-600 transition-colors">
+          ← Back to Welcome
+        </Link>
       </div>
     </div>
   )
