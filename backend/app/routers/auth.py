@@ -21,6 +21,10 @@ def register(payload: StudentRegister, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    existing_reg = db.query(Student).filter(Student.register_number == payload.register_number).first()
+    if existing_reg:
+        raise HTTPException(status_code=400, detail="Register number already registered")
+
     student = Student(
         full_name=payload.full_name,
         register_number=payload.register_number,

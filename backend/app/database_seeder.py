@@ -6,9 +6,10 @@ from app.models.semester import Semester
 from app.models.course import Course
 from app.models.unit import Unit
 from app.models.topic import Topic
-from app.models.test import Test, Question
-from app.models.assignment import Assignment
+from app.models.test import Test, Question, TestAttempt, TestResult
+from app.models.assignment import Assignment, AssignmentSubmission
 from app.models.student import Student
+from app.models.semester_completion import SemesterCompletion
 from app.models.admin_user import AdminUser
 from app.auth.security import hash_password
 
@@ -382,7 +383,6 @@ def seed_db(db: Session):
             db.commit()
 
             # Seed Semester Completion for semesters 1-6 to show GPA trends
-            from app.models.semester_completion import SemesterCompletion
             import random
             emails = ["student@rajalakshmi.edu.in", "arjun.kumar@college.edu", "231801013@rajalakshmi.edu.in", "231801027@rajalakshmi.edu.in", "231801042@rajalakshmi.edu.in", "231801048@rajalakshmi.edu.in", "231801062@rajalakshmi.edu.in"]
             for email in emails:
@@ -410,8 +410,6 @@ def seed_db(db: Session):
             db.commit()
 
             # Seed assignments & tests attempts/results for student courses
-            from app.models.assignment import Assignment, AssignmentSubmission
-            from app.models.test import Test, TestAttempt, TestResult
             from datetime import datetime
             
             for email in emails:

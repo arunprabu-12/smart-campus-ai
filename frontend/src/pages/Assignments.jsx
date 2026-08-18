@@ -1,4 +1,3 @@
-/** Spec section 6 — assignments with status tracking and submission. */
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getAssignments, submitAssignment } from '../api/assignments'
@@ -6,12 +5,14 @@ import { useAuth } from '../context/AuthContext'
 import { getDashboard } from '../api/students'
 import { getCoursesForSemester } from '../api/courses'
 import apiClient from '../api/client'
-
-const STATUS_COLORS = {
-  Pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  Submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  Evaluated: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-}
+import { PageHeader } from '../components/ui/PageHeader'
+import { StatCard } from '../components/ui/StatCard'
+import { Card } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
+import { EmptyState } from '../components/ui/EmptyState'
 
 function AssignmentCard({ assignment, onSubmit }) {
   const [expanded, setExpanded] = useState(false)
@@ -39,71 +40,76 @@ function AssignmentCard({ assignment, onSubmit }) {
   }
 
   const status = submitted ? 'Submitted' : 'Pending'
+  const badgeVariant = submitted ? 'success' : 'warning'
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
+    <Card p="p-5" className="flex flex-col justify-between h-full">
+      <div>
+        <div className="flex items-start justify-between gap-3 mb-2">
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{assignment.title}</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{questions.length} question{questions.length !== 1 ? 's' : ''}</p>
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-snug">{assignment.title}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {questions.length} question{questions.length !== 1 ? 's' : ''}
+            </p>
           </div>
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[status]}`}>
-            {status}
-          </span>
+          <Badge variant={badgeVariant}>{status}</Badge>
         </div>
-        <button
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setExpanded(!expanded)}
-          className="mt-3 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
         >
-          {expanded ? '▲ Hide Questions' : '▼ View Questions'}
-        </button>
+          {expanded ? 'Hide Questions ▲' : 'View Questions ▼'}
+        </Button>
       </div>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-700 pt-4 space-y-4">
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
           {questions.map((q, idx) => (
-            <div key={idx}>
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+            <div key={idx} className="space-y-1.5">
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                 {idx + 1}. {q.text || q}
               </p>
               <textarea
                 rows={3}
                 disabled={submitted}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-slate-50 dark:disabled:bg-slate-800/50"
                 placeholder="Write your answer here..."
                 value={answers[idx] || ''}
                 onChange={(e) => setAnswers((prev) => ({ ...prev, [idx]: e.target.value }))}
               />
             </div>
           ))}
-          {!submitted && (
-            <button
+          {!submitted ? (
+            <Button
+              variant="primary"
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg py-2.5 text-sm font-medium transition-colors"
+              className="w-full"
             >
               {submitting ? 'Submitting...' : 'Submit Assignment'}
-            </button>
-          )}
-          {submitted && (
-            <div className="text-center py-3 text-green-600 dark:text-green-400 text-sm font-medium">
+            </Button>
+          ) : (
+            <div className="text-center py-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
               ✓ Assignment submitted successfully!
             </div>
           )}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
 export default function Assignments() {
-  const { student } = useAuth()
   const [searchParams] = useSearchParams()
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [courses, setCourses] = useState([])
   const [courseId, setCourseId] = useState(searchParams.get('courseId') || '')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const [viewMode, setViewMode] = useState('db')
   const [docBank, setDocBank] = useState([])
@@ -159,78 +165,114 @@ export default function Assignments() {
 
   useEffect(() => { load() }, [courseId])
 
+  const filteredAssignments = assignments.filter((a) =>
+    a.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const totalCount = assignments.length
+  const pendingCount = assignments.length // Default active state
+
   return (
-    <div className="flex justify-center w-full">
-      <div className="space-y-6 w-full max-w-3xl px-4 md:px-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Assignments</h2>
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-              <button 
-                onClick={() => setViewMode('db')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'db' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-              >
-                Database
-              </button>
-              <button 
-                onClick={() => setViewMode('doc')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'doc' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-              >
-                Document Bank
-              </button>
-            </div>
-          </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Course:</label>
-          <select
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    <div className="space-y-6">
+      <PageHeader
+        title="Assignments"
+        description="Manage and submit your course assignments."
+      >
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setViewMode('db')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+              viewMode === 'db'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
           >
-            <option value="">Select a course...</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.course_name} ({c.course_code})
-              </option>
-            ))}
-          </select>
+            Database
+          </button>
+          <button
+            onClick={() => setViewMode('doc')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+              viewMode === 'doc'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            Document Bank
+          </button>
         </div>
+      </PageHeader>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard label="Total Assigned" value={totalCount} icon="📋" accentColor="text-blue-600" />
+        <StatCard label="Pending" value={pendingCount} icon="⏳" accentColor="text-amber-600" />
+        <StatCard label="Completed" value={0} icon="✅" accentColor="text-emerald-600" />
+        <StatCard label="Evaluated" value={0} icon="⭐" accentColor="text-indigo-600" />
       </div>
 
+      {/* Search & Filter Bar */}
+      <Card p="p-4" className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="w-full sm:w-72">
+          <Input
+            placeholder="Search assignments..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="w-full sm:w-64">
+          <Select
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : '')}
+          >
+            <option value="">Select Course...</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.course_name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </Card>
+
+      {/* Content Section */}
       {viewMode === 'doc' ? (
         loadingDoc ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          </div>
         ) : docBank.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">No questions extracted from document.</div>
+          <EmptyState title="No Question Bank Questions Found" description="Could not extract questions from the document bank." />
         ) : (
           <div className="space-y-6">
-            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl text-sm border border-blue-100 dark:border-blue-800">
-              ℹ️ These questions are fetched directly and dynamically from the provided Question Bank DOCX file.
-            </div>
+            <Card p="p-4" className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-sm">
+              ℹ️ Questions parsed dynamically from the academic Question Bank DOCX repository.
+            </Card>
             {docBank.map((course, idx) => (
-              <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
-                <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.course_name}</h3>
+              <Card key={idx} p="p-0" className="overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-800/80 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{course.course_name}</h3>
                 </div>
-                <div className="p-6 space-y-8">
+                <div className="p-6 space-y-6">
                   {course.units.map((unit, uIdx) => (
                     <div key={uIdx} className="space-y-4">
-                      <h4 className="font-semibold text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700 pb-2">{unit.unit_name}</h4>
-                      <div className="space-y-4">
+                      <h4 className="font-semibold text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-700/60 pb-2">
+                        {unit.unit_name}
+                      </h4>
+                      <div className="space-y-3">
                         {unit.questions.map((q, qIdx) => (
-                          <div key={qIdx} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl">
-                            <p className="font-medium text-gray-800 dark:text-gray-200 mb-3">{qIdx + 1}. {q.text}</p>
+                          <div key={qIdx} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <p className="font-medium text-slate-800 dark:text-slate-200 mb-2">{qIdx + 1}. {q.text}</p>
                             {q.options && q.options.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                                 {q.options.map((opt, oIdx) => (
-                                  <div key={oIdx} className={`p-2 rounded-lg text-sm border ${q.answer && opt.startsWith(q.answer) ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                                  <div key={oIdx} className={`p-2 rounded-lg text-sm border ${q.answer && opt.startsWith(q.answer) ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 font-medium' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'}`}>
                                     {opt}
                                   </div>
                                 ))}
                               </div>
                             )}
                             {q.type === 'Descriptive' && (
-                              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-sm rounded-lg border border-blue-100 dark:border-blue-800">
+                              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 text-xs rounded-lg border border-blue-100 dark:border-blue-800">
                                 <span className="font-semibold">Expected Answer: </span>{q.answer}
                               </div>
                             )}
@@ -240,27 +282,23 @@ export default function Assignments() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )
+      ) : loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        </div>
+      ) : filteredAssignments.length === 0 ? (
+        <EmptyState title="No Assignments Found" description="There are no active assignments for the selected course." />
       ) : (
-        loading ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
-        ) : assignments.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <p className="text-4xl mb-3">📋</p>
-            <p>No assignments found for this course.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {assignments.map((a) => (
-              <AssignmentCard key={a.id} assignment={a} onSubmit={load} />
-            ))}
-          </div>
-        )
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredAssignments.map((a) => (
+            <AssignmentCard key={a.id} assignment={a} onSubmit={load} />
+          ))}
+        </div>
       )}
-      </div>
     </div>
   )
 }

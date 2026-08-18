@@ -55,12 +55,26 @@ def parse_docx(file_path):
                 
     return data
 
+def get_project_file(filename: str) -> str:
+    # Try current directory, project root, and parent directories
+    candidates = [
+        os.path.join(os.getcwd(), filename),
+        os.path.join(os.path.dirname(__file__), "..", "..", filename),
+        os.path.join(os.path.dirname(__file__), "..", filename),
+        r"c:\Users\Arun\Desktop\ai-academic-platform\\" + filename,
+    ]
+    for path in candidates:
+        abs_p = os.path.abspath(path)
+        if os.path.exists(abs_p):
+            return abs_p
+    return candidates[0]
+
 @router.get("/assignments")
 def get_assignments_bank():
-    doc_path = r"c:\Users\Arun\Desktop\ai-academic-platform\AI_DS_Unit_Wise_Assignment_Question_Bank.docx"
+    doc_path = get_project_file("AI_DS_Unit_Wise_Assignment_Question_Bank.docx")
     return parse_docx(doc_path)
 
 @router.get("/tests")
 def get_tests_bank():
-    doc_path = r"c:\Users\Arun\Desktop\ai-academic-platform\AI_DS_Assignment_Question_Bank_Set_2-1.docx"
+    doc_path = get_project_file("AI_DS_Assignment_Question_Bank_Set_2-1.docx")
     return parse_docx(doc_path)

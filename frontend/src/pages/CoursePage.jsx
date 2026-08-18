@@ -50,38 +50,9 @@ function TopicRow({ topic, unitTitle, courseId, onComplete }) {
               ✓ Done
             </button>
           )}
-          <button
-            onClick={handleFetchVideos}
-            className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            {showVideos ? 'Hide Videos' : '▶ YouTube'}
-          </button>
-          {topic.notes && (
-            <button
-              onClick={() => setShowNotes(!showNotes)}
-              className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              📝 Notes
-            </button>
-          )}
         </div>
       </div>
 
-      {showNotes && topic.notes && (
-        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-300">
-          {topic.notes}
-        </div>
-      )}
-
-      {showVideos && (
-        <div className="mt-3 space-y-2">
-          {videos.length === 0 ? (
-            <p className="text-xs text-gray-400">No videos found (YouTube API key required).</p>
-          ) : (
-            videos.map((v, i) => <VideoCard key={i} video={v} />)
-          )}
-        </div>
-      )}
     </div>
   )
 }

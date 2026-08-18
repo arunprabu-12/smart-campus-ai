@@ -1,10 +1,16 @@
-/** Spec section 1 — student profile page with all fields + progress. */
 import { useEffect, useState } from 'react'
 import { getProfile, getDashboard } from '../api/students'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import ProgressBar from '../components/ProgressBar'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { StatCard } from '../components/ui/StatCard'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
 
 export default function Profile() {
   const { logout } = useAuth()
@@ -24,7 +30,6 @@ export default function Profile() {
         setProfile(pRes.data)
         setDashboard(dRes.data)
         
-        // Populate existing SGPAs
         const initialSgpas = {}
         dRes.data.semester_statuses?.forEach(s => {
           if (s.status === 'completed' && s.sgpa) {
@@ -60,7 +65,6 @@ export default function Profile() {
       const res = await api.post('/students/me/update-cgpa', { sgpas: sgpaInputs })
       setProfile(prev => ({ ...prev, cgpa: res.data.new_cgpa }))
       alert('CGPA and Semester SGPAs successfully updated across the platform! 🎉')
-      // Refresh dashboard to reflect in graphs
       const dRes = await getDashboard()
       setDashboard(dRes.data)
     } catch (e) {
@@ -72,78 +76,75 @@ export default function Profile() {
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"/></div>
 
   return (
-    <div className="flex justify-center w-full pb-8">
-      <div className="w-full max-w-2xl space-y-6 px-4 md:px-0">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h2>
+    <div className="space-y-6">
+      <PageHeader
+        title="Student Profile & Settings"
+        description="Manage your account, view academic progress, and send feedback."
+      />
 
-      {/* Avatar + name */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center gap-5">
-        <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold flex-shrink-0">
-          {profile?.full_name?.charAt(0) || '?'}
+      {/* Avatar Header */}
+      <Card p="p-6" className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white border-0 shadow-md">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold shrink-0">
+            {profile?.full_name?.charAt(0) || '?'}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{profile?.full_name}</h2>
+            <p className="text-blue-100 text-sm">{profile?.college_email}</p>
+            <p className="text-blue-100 text-xs font-mono mt-0.5">Register No: {profile?.register_number}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-xl font-bold">{profile?.full_name}</h3>
-          <p className="text-blue-200 text-sm">{profile?.college_email}</p>
-          <p className="text-blue-200 text-sm font-mono">{profile?.register_number}</p>
-        </div>
-      </div>
+      </Card>
 
-      {/* Details grid */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Academic Details</h3>
-        <div className="grid grid-cols-2 gap-4">
+      {/* Academic Details */}
+      <Card p="p-6">
+        <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">Academic Details</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { label: 'Department ID', value: profile?.department_id },
             { label: 'Regulation ID', value: profile?.regulation_id },
-            { label: 'Current Semester', value: profile?.current_semester },
+            { label: 'Current Semester', value: `Sem ${profile?.current_semester}` },
             { label: 'Section', value: profile?.section || '—' },
             { label: 'Admission Year', value: profile?.admission_year || '—' },
             { label: 'Career Interest', value: profile?.career_interest || '—' },
           ].map((item) => (
-            <div key={item.label} className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
-              <p className="font-semibold text-gray-900 dark:text-white text-sm mt-0.5">{item.value}</p>
+            <div key={item.label} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+              <p className="text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
+              <p className="font-semibold text-slate-900 dark:text-white text-sm mt-0.5">{item.value}</p>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* CGPA + Progress */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Performance</h3>
-        <div className="flex items-center gap-6 mb-4">
-          <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">CGPA</p>
-            <p className="text-3xl font-bold text-blue-600">{profile?.cgpa?.toFixed(2)}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StatCard label="Cumulative CGPA" value={profile?.cgpa?.toFixed(2) || '0.00'} icon="⭐" accentColor="text-amber-500" />
+        <Card p="p-5" className="flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Overall Completion</span>
+            <span className="text-sm font-bold text-blue-600">{dashboard?.overall_progress_pct}%</span>
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              Overall Progress: <strong>{dashboard?.overall_progress_pct}%</strong>
-            </p>
-            <ProgressBar percent={dashboard?.overall_progress_pct || 0} />
-          </div>
-        </div>
+          <ProgressBar percent={dashboard?.overall_progress_pct || 0} />
+        </Card>
       </div>
 
-      {/* AI CGPA Calculator & Updater */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-purple-100 dark:border-purple-900">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>✨</span> AI CGPA Calculator & Updater
-          </h3>
-        </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-          Input your SGPA for completed semesters. The AI will recalculate your overall CGPA and reflect it globally across your Dashboard timeline and charts!
+      {/* AI CGPA Calculator */}
+      <Card p="p-6">
+        <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-2 flex items-center gap-2">
+          <span>✨</span> AI SGPA & CGPA Updater
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+          Input your SGPA for completed semesters to recalculate overall CGPA globally across your platform.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
             const isLocked = dashboard?.semester_statuses?.find(s => s.number === sem)?.status === 'locked'
             const isInProgress = dashboard?.semester_statuses?.find(s => s.number === sem)?.status === 'in_progress'
             
             return (
-              <div key={sem} className={`p-3 rounded-xl border ${isLocked ? 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-50' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'}`}>
-                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+              <div key={sem} className={`p-3 rounded-xl border ${isLocked ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-50' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700'}`}>
+                <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
                   Sem {sem} {isInProgress ? '(Current)' : ''}
                 </label>
                 <input
@@ -155,109 +156,89 @@ export default function Profile() {
                   value={sgpaInputs[sem] || ''}
                   onChange={(e) => handleSgpaChange(sem, e.target.value)}
                   placeholder="e.g. 8.5"
-                  className="w-full bg-transparent text-sm font-semibold text-gray-900 dark:text-white focus:outline-none"
+                  className="w-full bg-transparent text-sm font-semibold text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             )
           })}
         </div>
 
-        <button
+        <Button
+          variant="primary"
           onClick={handleUpdateCGPA}
           disabled={isUpdating}
-          className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors"
+          className="w-full"
         >
           {isUpdating ? 'Updating Platform...' : 'Save & Update CGPA Globally'}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      {/* Notifications Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>🔔</span> Recent Notifications
-          </h3>
-          {notifications.length > 0 && (
-            <button 
-              onClick={() => { localStorage.removeItem('student_notifications'); setNotifications([]); window.dispatchEvent(new Event('new_notification')); }}
-              className="text-xs text-red-500 hover:text-red-600 font-medium"
-            >
-              Clear All
-            </button>
-          )}
-        </div>
-        
-        {notifications.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No recent notifications.</p>
-        ) : (
-          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-            {notifications.map((n, i) => {
-              const lowerText = n.text.toLowerCase();
-              const path = lowerText.includes('test') ? '/tests' 
-                         : lowerText.includes('assignment') ? '/assignments' 
-                         : lowerText.includes('study plan') ? '/study-plan' 
-                         : null;
-              return (
-                <button 
-                  key={i} 
-                  onClick={() => path && navigate(path)}
-                  className={`w-full text-left p-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 transition ${path ? 'hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer' : 'cursor-default'}`}
-                >
-                  <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{n.text}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(n.date).toLocaleString()}</p>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Feedback Section */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>💬</span> Send Feedback to Staff
-          </h3>
-        </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Have a suggestion, found a bug, or need help? Send a message directly to the admin/staff team.
+      {/* Official Department Feedback */}
+      <Card p="p-6">
+        <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-2 flex items-center gap-2">
+          <span>💬</span> Official Department Feedback
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Submit formal feedback to your department Head (HOD), Staff, or Admin.
         </p>
         <form onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const msg = fd.get('feedback');
+          const to = fd.get('to');
           if (!msg.trim()) return;
           const stored = JSON.parse(localStorage.getItem('admin_feedbacks') || '[]');
-          stored.push({ text: msg, date: new Date().toISOString(), studentName: profile?.full_name || 'Student' });
+          stored.push({ text: msg, to, date: new Date().toISOString(), studentName: profile?.full_name || 'Student' });
           localStorage.setItem('admin_feedbacks', JSON.stringify(stored));
-          alert('Feedback sent successfully to staff!');
+          window.dispatchEvent(new Event('storage')); 
+          alert('Official feedback submitted successfully!');
           e.target.reset();
-        }}>
+        }} className="space-y-3">
+          <Select name="to" required>
+            <option value="Admin">Admin</option>
+            <option value="HOD">HOD (Head of Department)</option>
+            <option value="Department Staff">Department Staff</option>
+          </Select>
           <textarea 
             name="feedback"
             rows="3"
-            placeholder="Type your feedback here..."
-            className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 mb-3"
+            placeholder="Describe your issue, request, or suggestion..."
+            className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           ></textarea>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            Send Feedback
-          </button>
+          <Button type="submit" variant="primary">
+            Submit Formal Feedback
+          </Button>
         </form>
-      </div>
+        
+        {/* Sent Feedbacks & Replies */}
+        <div className="mt-6 space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">My Feedback History</h4>
+          {(() => {
+            const myFb = JSON.parse(localStorage.getItem('admin_feedbacks') || '[]').filter(f => f.studentName === (profile?.full_name || 'Student')).reverse();
+            if (myFb.length === 0) return <p className="text-xs text-slate-500">No feedback submitted yet.</p>
+            return myFb.map((f, i) => (
+              <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">To: {f.to || 'Admin'}</span>
+                  <span className="text-xs text-slate-400">{new Date(f.date).toLocaleDateString()}</span>
+                </div>
+                <p className="text-sm text-slate-800 dark:text-slate-200">{f.text}</p>
+                {f.reply && (
+                  <div className="mt-2 p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <strong>Official Reply: </strong> {f.reply}
+                  </div>
+                )}
+              </div>
+            ))
+          })()}
+        </div>
+      </Card>
 
       {/* Logout */}
-      <button
-        onClick={handleLogout}
-        id="logout-btn"
-        className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
-      >
+      <Button variant="danger" onClick={handleLogout} className="w-full">
         Sign Out
-      </button>
-      </div>
+      </Button>
     </div>
   )
 }

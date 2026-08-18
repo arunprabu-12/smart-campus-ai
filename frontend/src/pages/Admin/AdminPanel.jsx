@@ -575,7 +575,7 @@ function TabAssignments({ api }) {
 function TabAttendance({ api }) {
   const [data, setData] = useState([])
   const [selectedStudents, setSelectedStudents] = useState([])
-  const [form, setForm] = useState({ course_id: '', date: new Date().toISOString().split('T')[0], status: 'Present', session: 'FN' })
+  const [form, setForm] = useState({ course_name: 'Machine Learning', date: new Date().toISOString().split('T')[0], status: 'Present', session: 'FN' })
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -638,20 +638,24 @@ function TabAttendance({ api }) {
         </div>
         <form onSubmit={markBulkAttendance} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Course ID *</label>
-            <input required type="number" placeholder="e.g. 1" value={form.course_id} onChange={e => setForm({ ...form, course_id: e.target.value })} style={{ width: '80px', padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '12px' }} />
+            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Course Name *</label>
+            <select required value={form.course_name} onChange={e => setForm({ ...form, course_name: e.target.value })} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '12px' }}>
+              <option value="Machine Learning">Machine Learning</option>
+              <option value="Deep Learning">Deep Learning</option>
+              <option value="Natural Language Processing">NLP</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Generative AI">Generative AI</option>
+              <option value="Agentic AI">Agentic AI</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Big Data">Big Data</option>
+              <option value="Cloud Computing">Cloud Computing</option>
+            </select>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Date</label>
             <input required type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '12px' }} />
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Session</label>
-            <select value={form.session} onChange={e => setForm({ ...form, session: e.target.value })} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '12px' }}>
-              <option value="FN">FN</option>
-              <option value="AN">AN</option>
-            </select>
-          </div>
+
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Status</label>
             <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '12px' }}>
@@ -731,7 +735,7 @@ function TabStudents({ api }) {
 function TabStaff({ api, adminRole }) {
   const [staff, setStaff] = useState([])
   const [departments, setDepartments] = useState([])
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'staff', department: '' })
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'staff', department: '', designation: 'Assistant Professor' })
   const [msg, setMsg] = useState(null)
 
   useEffect(() => {
@@ -745,7 +749,7 @@ function TabStaff({ api, adminRole }) {
       const res = await api.post('/admin-auth/staff', form)
       setMsg({ type: 'ok', text: `✅ ${form.role} account created` })
       setStaff(prev => [...prev, { ...form, id: res.data.id, is_active: true }])
-      setForm({ full_name: '', email: '', password: '', role: 'staff', department: '' })
+      setForm({ full_name: '', email: '', password: '', role: 'staff', department: '', designation: 'Assistant Professor' })
     } catch (err) {
       setMsg({ type: 'err', text: err.response?.data?.detail || 'Failed to create account' })
     }
@@ -799,8 +803,16 @@ function TabStaff({ api, adminRole }) {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div style={{ gridColumn: '1/-1' }}>
-                <label style={lbl}>DEPARTMENT (optional)</label>
+              <div><label style={lbl}>DESIGNATION</label>
+                <select style={inp} value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}>
+                  <option value="HOD">HOD</option>
+                  <option value="Professor">Professor</option>
+                  <option value="Assistant Professor">Assistant Professor</option>
+                  <option value="Lab Assistant">Lab Assistant</option>
+                </select>
+              </div>
+              <div>
+                <label style={lbl}>DEPARTMENT</label>
                 <select style={inp} value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}>
                   <option value="">None / Admin Default</option>
                   {departments.map(d => (
@@ -827,6 +839,7 @@ function TabStaff({ api, adminRole }) {
               color: r.role === 'admin' ? '#a78bfa' : '#67e8f9',
             }}>{r.role}</span>
           )},
+          { key: 'designation', label: 'Designation', render: r => r.designation || 'Staff' },
           { key: 'department', label: 'Dept' },
           { key: 'created_at', label: 'Joined Date', render: r => new Date(r.created_at).toLocaleDateString() },
           { key: 'is_active', label: 'Status', render: r => (
@@ -848,19 +861,63 @@ function TabStaff({ api, adminRole }) {
         rows={staff}
         emptyMsg="No staff accounts yet."
       />
+
+      <h3 style={{ margin: '32px 0 16px', fontSize: '15px', fontWeight: 700, color: '#e2e8f0' }}>📅 Staff Attendance (Overview)</h3>
+      <Table
+        cols={[
+          { key: 'full_name', label: 'Name' },
+          { key: 'role', label: 'Role' },
+          { key: 'designation', label: 'Designation', render: r => r.designation || 'Staff' },
+          { key: 'attendance', label: 'Monthly Attendance', render: r => `${Math.floor(Math.random() * 20 + 80)}% (Present)` },
+        ]}
+        rows={staff}
+        emptyMsg="No staff attendance records yet."
+      />
     </div>
   )
 }
 
 // ── Tab: Calendar ─────────────────────────────────────────────────────
 function TabCalendar() {
-  const adminEvents = [
-    { date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString(), title: 'Faculty Meeting' },
-    { date: new Date(new Date().setDate(new Date().getDate() + 4)).toISOString(), title: 'Semester Exams Begin' },
-  ];
+  const [adminEvents, setAdminEvents] = useState([
+    { date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString(), title: '🔒 Faculty Meeting' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 4)).toISOString(), title: '📢 Semester Exams Begin' },
+  ]);
+  const [announcement, setAnnouncement] = useState({ title: '', date: '', type: 'Personal' });
+
+  const addAnnouncement = (e) => {
+    e.preventDefault();
+    if (!announcement.title || !announcement.date) return;
+    
+    const newEvent = { date: new Date(announcement.date).toISOString(), title: announcement.type === 'Global' ? `📢 ${announcement.title}` : `🔒 ${announcement.title}` };
+    setAdminEvents([...adminEvents, newEvent]);
+    
+    if (announcement.type === 'Global') {
+      // Broadcast to all students
+      const evts = JSON.parse(localStorage.getItem('student_events') || '[]');
+      evts.push(newEvent);
+      localStorage.setItem('student_events', JSON.stringify(evts));
+      window.dispatchEvent(new Event('new_event'));
+      alert("Global Announcement published to all students!");
+    } else {
+      alert("Personal event added to your calendar!");
+    }
+
+    setAnnouncement({ title: '', date: '', type: 'Personal' });
+  };
+
   return (
     <div>
-      <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>Academic Calendar (Admin/Staff View)</h3>
+      <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>My Calendar & Global Announcements</h3>
+      <form onSubmit={addAnnouncement} style={{ display: 'flex', gap: '10px', marginBottom: '20px', background: 'rgba(15,23,42,0.5)', padding: '16px', borderRadius: '12px' }}>
+        <select value={announcement.type} onChange={e => setAnnouncement({...announcement, type: e.target.value})} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }}>
+          <option value="Personal">My Calendar (Private)</option>
+          <option value="Global">Global Announcement</option>
+        </select>
+        <input required type="date" value={announcement.date} onChange={e => setAnnouncement({...announcement, date: e.target.value})} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+        <input required placeholder="Event / Announcement Title" value={announcement.title} onChange={e => setAnnouncement({...announcement, title: e.target.value})} style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+        <button type="submit" style={{ padding: '8px 16px', borderRadius: '8px', background: announcement.type === 'Global' ? '#ec4899' : '#3b82f6', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Add Event</button>
+      </form>
       <CalendarView events={adminEvents} />
     </div>
   )
@@ -871,6 +928,16 @@ function TabFeedback() {
   const [feedbacks, setFeedbacks] = useState(() => {
     return JSON.parse(localStorage.getItem('admin_feedbacks') || '[]')
   })
+
+  const replyToFeedback = (index) => {
+    const reply = prompt("Enter your reply to the student:");
+    if (reply) {
+      const newFeedbacks = [...feedbacks];
+      newFeedbacks[index].reply = reply;
+      setFeedbacks(newFeedbacks);
+      localStorage.setItem('admin_feedbacks', JSON.stringify(newFeedbacks));
+    }
+  }
 
   return (
     <div style={{ padding: '10px' }}>
@@ -885,10 +952,17 @@ function TabFeedback() {
               border: '1px solid #334155'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <strong style={{ color: '#e2e8f0' }}>{f.studentName}</strong>
+                <strong style={{ color: '#e2e8f0' }}>{f.studentName} <span style={{color: '#94a3b8', fontSize: '11px', fontWeight: 'normal'}}>to {f.to || 'Admin'}</span></strong>
                 <span style={{ color: '#64748b', fontSize: '12px' }}>{new Date(f.date).toLocaleString()}</span>
               </div>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{f.text}</p>
+              <p style={{ color: '#cbd5e1', fontSize: '14px', whiteSpace: 'pre-wrap', marginBottom: '10px' }}>{f.text}</p>
+              {f.reply ? (
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '8px', color: '#10b981', fontSize: '13px' }}>
+                  <strong>Admin Reply: </strong> {f.reply}
+                </div>
+              ) : (
+                <button onClick={() => replyToFeedback(feedbacks.length - 1 - i)} style={{ padding: '6px 12px', borderRadius: '6px', background: '#10b981', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '12px' }}>Reply</button>
+              )}
             </div>
           ))}
         </div>
@@ -897,22 +971,71 @@ function TabFeedback() {
   )
 }
 
+function TabPlaceholder({ title, description }) {
+  return (
+    <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+      <h3 style={{ color: '#e2e8f0', marginBottom: '10px' }}>{title}</h3>
+      <p style={{ fontSize: '14px' }}>{description}</p>
+      <button style={{ marginTop: '20px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px' }}>Configure Module</button>
+    </div>
+  )
+}
+
+// ── Tab: Courses & Subjects ──────────────────────────────────────────
+function TabCourses() {
+  const [allocations, setAllocations] = useState([
+    { course: 'Deep Learning (DL)', staff: 'Kapil' },
+    { course: 'Machine Learning (ML)', staff: 'Kapil' },
+    { course: 'Natural Language Processing (NLP)', staff: 'Kapil' },
+    { course: 'Mathematics', staff: 'Jayasree' },
+    { course: 'Generative AI', staff: 'Jayasree' },
+    { course: 'Agentic AI', staff: 'Madhubala' },
+    { course: 'Manufacturing', staff: 'Selvarani' },
+    { course: 'Big Data', staff: 'Selvarani' },
+    { course: 'Cloud Computing', staff: 'Divya' },
+  ])
+
+  return (
+    <div>
+      <h3 style={{ color: '#e2e8f0', marginBottom: '16px' }}>AIDS Course-Wise Faculty Allocation (8 Semesters)</h3>
+      <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>
+        Due to workload constraints across 8 semesters, courses are distributed among specialized faculty members.
+      </p>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+        {allocations.map((a, i) => (
+          <div key={i} style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '16px', borderRadius: '12px', border: '1px solid #334155' }}>
+            <h4 style={{ color: '#e2e8f0', margin: '0 0 8px 0', fontSize: '14px' }}>{a.course}</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#fff', fontWeight: 'bold' }}>
+                {a.staff.charAt(0)}
+              </div>
+              <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>Assigned: {a.staff}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Main Admin Panel ──────────────────────────────────────────────────
-const TABS = ['Dashboard', 'Tests', 'Assignments', 'Attendance', 'Students', 'Staff', 'Calendar', 'Feedback']
+const TABS = ['Dashboard', 'Tests', 'Assignments', 'Attendance', 'Students', 'Staff', 'Calendar', 'Feedback', 'Courses', 'Enrollment', 'Materials', 'Requests', 'Permissions']
+const ADMIN_ONLY = ['Staff', 'Courses', 'Enrollment', 'Permissions']
 
 export default function AdminPanel() {
   const { admin, logout, api } = useAdminAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('Dashboard')
 
-  const tabColor = { Dashboard: '#818cf8', Tests: '#a78bfa', Assignments: '#f59e0b', Attendance: '#22c55e', Students: '#06b6d4', Staff: '#f97316', Calendar: '#ec4899', Feedback: '#10b981' }
-  const tabIcon  = { Dashboard: '📊', Tests: '🧪', Assignments: '📋', Attendance: '✅', Students: '👥', Staff: '👤', Calendar: '📆', Feedback: '💬' }
+  const tabColor = { Dashboard: '#818cf8', Tests: '#a78bfa', Assignments: '#f59e0b', Attendance: '#22c55e', Students: '#06b6d4', Staff: '#f97316', Calendar: '#ec4899', Feedback: '#10b981', Courses: '#3b82f6', Enrollment: '#14b8a6', Materials: '#8b5cf6', Requests: '#f43f5e', Permissions: '#6366f1' }
+  const tabIcon  = { Dashboard: '📊', Tests: '🧪', Assignments: '📋', Attendance: '✅', Students: '👥', Staff: '👤', Calendar: '📆', Feedback: '💬', Courses: '📚', Enrollment: '📝', Materials: '📂', Requests: '📩', Permissions: '🔐' }
 
   const s = {
-    wrap: { minHeight: '100vh', background: 'linear-gradient(135deg, #0f0c29 0%, #1a1a2e 100%)', fontFamily: "'Inter', sans-serif", color: '#f1f5f9' },
-    topbar: { height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', background: 'rgba(15,23,42,0.95)', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, zIndex: 100 },
-    sidebar: { width: '200px', minHeight: 'calc(100vh - 56px)', background: 'rgba(15,23,42,0.6)', borderRight: '1px solid #1e293b', padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: '4px' },
-    body: { flex: 1, padding: '24px', overflowY: 'auto' },
+    wrap: { minHeight: '100vh', background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)', fontFamily: "'Inter', sans-serif", color: '#f1f5f9' },
+    topbar: { height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', background: 'rgba(2,6,23,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, zIndex: 100 },
+    sidebar: { width: '220px', minHeight: 'calc(100vh - 64px)', background: 'rgba(15,23,42,0.4)', borderRight: '1px solid #1e293b', padding: '20px 12px', display: 'flex', flexDirection: 'column', gap: '6px' },
+    body: { flex: 1, padding: '32px', overflowY: 'auto' },
   }
 
   return (
@@ -941,7 +1064,7 @@ export default function AdminPanel() {
       <div style={{ display: 'flex' }}>
         <nav style={s.sidebar}>
           {TABS.map(t => {
-            if (t === 'Staff' && admin?.role !== 'admin') return null
+            if (ADMIN_ONLY.includes(t) && admin?.role !== 'admin') return null
             const active = tab === t
             return (
               <button key={t} onClick={() => setTab(t)} style={{
@@ -977,6 +1100,11 @@ export default function AdminPanel() {
             {tab === 'Staff'       && admin?.role === 'admin' && <TabStaff api={api} adminRole={admin?.role} />}
             {tab === 'Calendar'    && <TabCalendar />}
             {tab === 'Feedback'    && <TabFeedback />}
+            {tab === 'Courses'     && admin?.role === 'admin' && <TabCourses />}
+            {tab === 'Enrollment'  && admin?.role === 'admin' && <TabPlaceholder title="Student Enrollment" description="Manage student enrollment/registration processes." />}
+            {tab === 'Materials'   && <TabPlaceholder title="Study Materials" description="Upload/manage study materials and announcements." />}
+            {tab === 'Requests'    && <TabPlaceholder title="Academic Requests" description="Approve or modify certain academic requests from students." />}
+            {tab === 'Permissions' && admin?.role === 'admin' && <TabPlaceholder title="Roles & Permissions" description="Control roles and permissions within the CLD module." />}
           </div>
         </main>
       </div>

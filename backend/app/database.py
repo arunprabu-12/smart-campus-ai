@@ -30,7 +30,29 @@ def check_db_connection() -> bool:
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+        fix_db_sequences()
         return True
     except Exception as e:
         print(f"[DB CONNECTION FAILED] {e}")
         return False
+
+
+def fix_db_sequences():
+    """Syncs Postgres sequence counters with maximum IDs in each table."""
+    if settings.database_url.startswith("sqlite"):
+        return
+    tables = [
+        "students", "departments", "regulations", "semesters", "courses",
+        "units", "topics", "tests", "questions", "assignments",
+        "assignment_submissions", "test_attempts", "test_results", "admin_users"
+    ]
+    try:
+        with engine.connect() as conn:
+            for tbl in tables:
+                try:
+                    conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{tbl}', 'id'), COALESCE((SELECT MAX(id) FROM \"{tbl}\"), 1))"))
+                except Exception:
+                    pass
+            conn.commit()
+    except Exception as e:
+        print(f"[DB SEQUENCE RESET WARNING] {e}")

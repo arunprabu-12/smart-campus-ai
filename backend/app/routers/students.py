@@ -55,7 +55,14 @@ def get_my_dashboard(
         from app.models.course import Course
         from app.models.assignment import Assignment, AssignmentSubmission
         from app.models.test import Test, TestAttempt, TestResult
+        from app.routers.question_bank import get_assignments_bank
         
+        parsed_assignments = []
+        try:
+            parsed_assignments = get_assignments_bank()
+        except Exception:
+            pass
+
         courses = db.query(Course).filter(Course.semester_id == current_sem.id).all()
         for course in courses:
             # Assignment stats
@@ -63,6 +70,16 @@ def get_my_dashboard(
             sub_assign = db.query(AssignmentSubmission)\
                 .join(Assignment, AssignmentSubmission.assignment_id == Assignment.id)\
                 .filter(Assignment.course_id == course.id, AssignmentSubmission.student_id == current.id).count()
+            
+            # Fallback to parsed docx assignments count if DB has 0 assignments
+            if total_assign == 0 and parsed_assignments:
+                match_course = next((c for c in parsed_assignments if course.course_code.lower() in c.get('course_name', '').lower() or course.course_name.lower() in c.get('course_name', '').lower()), None)
+                if match_course:
+                    total_assign = sum(len(u.get('questions', [])) for u in match_course.get('units', []))
+                else:
+                    total_assign = 5
+                sub_assign = min(sub_assign, total_assign)
+
             course_assignment_stats.append({
                 "course_code": course.course_code,
                 "course_name": course.course_name,
@@ -86,6 +103,11 @@ def get_my_dashboard(
                 "avg_score": round(avg_score, 1)
             })
 
+    sgpa_trend = [
+        {"name": f"Sem {s['number']}", "sgpa": s["sgpa"]}
+        for s in semester_statuses if s.get("sgpa") is not None
+    ]
+
     return {
         "name": current.full_name,
         "register_number": current.register_number,
@@ -97,6 +119,7 @@ def get_my_dashboard(
         "cgpa": current.cgpa,
         "overall_progress_pct": overall_pct,
         "semester_statuses": semester_statuses,
+        "sgpa_trend": sgpa_trend,
         "current_semester_progress": current_progress,
         "course_assignment_stats": course_assignment_stats,
         "course_test_stats": course_test_stats,

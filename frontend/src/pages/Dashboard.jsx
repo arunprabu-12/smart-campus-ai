@@ -1,11 +1,13 @@
-/** Spec section 2 — main student dashboard with real API data. */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDashboard } from '../api/students'
 import { getCoursesForSemester } from '../api/courses'
-import ProgressBar from '../components/ProgressBar'
 import SemesterTimeline from '../components/SemesterTimeline'
 import CourseCard from '../components/CourseCard'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { StatCard } from '../components/ui/StatCard'
+import { Badge } from '../components/ui/Badge'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts'
 
 export default function Dashboard() {
@@ -20,7 +22,6 @@ export default function Dashboard() {
       try {
         const res = await getDashboard()
         setDashboard(res.data)
-        // Fetch courses for the current semester
         const semesterStatus = res.data.semester_statuses?.find(
           (s) => s.status === 'in_progress'
         )
@@ -47,59 +48,72 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-700 dark:text-red-400 text-sm">
+      <Card p="p-6" className="bg-red-50 dark:bg-red-950/20 border-red-200 text-red-700 dark:text-red-400">
         {error}
-      </div>
+      </Card>
     )
   }
 
   const currentProgress = dashboard?.current_semester_progress || {}
   const semesters = dashboard?.semester_statuses || []
   
-  // Data for SGPA trend line chart
   const sgpaData = semesters.filter(s => s.sgpa != null).map(s => ({
     name: `Sem ${s.number}`,
     sgpa: s.sgpa
   }))
 
-  // Data for current progress pie chart
   const progressPieData = [
     { name: 'Completed', value: currentProgress.overall_pct || 0 },
     { name: 'Remaining', value: 100 - (currentProgress.overall_pct || 0) }
   ]
-  const COLORS = ['#3b82f6', '#1e293b']
+  const COLORS = ['#2563eb', '#cbd5e1']
 
   return (
     <div className="space-y-6">
-      {/* Welcome card */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-        <h2 className="text-2xl font-bold">Welcome back, {dashboard?.name?.split(' ')[0]}! 👋</h2>
-        <p className="text-blue-100 text-sm mt-1">
-          Department ID: {dashboard?.department_id} · Regulation ID: {dashboard?.regulation_id} · Semester: {dashboard?.current_semester}
-        </p>
-        <div className="mt-4 flex items-center gap-6">
+      <PageHeader
+        title={`Welcome back, ${dashboard?.name?.split(' ')[0] || 'Student'}! 👋`}
+        description={`Semester ${dashboard?.current_semester} · CGPA ${dashboard?.cgpa?.toFixed(2)}`}
+      />
+
+      {/* Hero Welcome Card */}
+      <Card p="p-6" className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white border-0 shadow-md">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
-            <p className="text-blue-200 text-xs">CGPA</p>
-            <p className="text-3xl font-bold">{dashboard?.cgpa?.toFixed(2)}</p>
+            <span className="text-xs uppercase tracking-wider font-semibold text-blue-100 bg-white/20 px-3 py-1 rounded-full">
+              Current Academic Status
+            </span>
+            <h2 className="text-2xl font-bold mt-2">Overall Progress: {dashboard?.overall_progress_pct}%</h2>
+            <p className="text-xs text-blue-100 mt-1">
+              Department ID: {dashboard?.department_id} · Regulation ID: {dashboard?.regulation_id}
+            </p>
           </div>
-          <div className="flex-1">
-            <p className="text-blue-200 text-xs mb-1">Overall Progress ({dashboard?.overall_progress_pct}%)</p>
-            <div className="w-full bg-blue-500/40 rounded-full h-3">
+          <div className="w-full md:w-1/3">
+            <div className="w-full bg-black/20 rounded-full h-3">
               <div
-                className="bg-white h-3 rounded-full transition-all"
+                className="bg-white h-3 rounded-full transition-all shadow-sm"
                 style={{ width: `${dashboard?.overall_progress_pct || 0}%` }}
               />
             </div>
           </div>
         </div>
+      </Card>
+
+      {/* Quick Statistics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="CGPA" value={dashboard?.cgpa?.toFixed(2) || '0.00'} icon="🎓" accentColor="text-blue-600" />
+        <StatCard label="Current Semester" value={`Sem ${dashboard?.current_semester || 1}`} icon="📅" accentColor="text-indigo-600" />
+        <StatCard label="Active Courses" value={courses.length} icon="📚" accentColor="text-emerald-600" />
+        <StatCard label="Progress" value={`${currentProgress.overall_pct || 0}%`} icon="⚡" accentColor="text-amber-600" />
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Semester Progress Donut */}
+        {/* Semester Progress */}
         {currentProgress.overall_pct !== undefined && (
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Semester {dashboard?.current_semester} Completion</h3>
+          <Card p="p-6">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">
+              Semester {dashboard?.current_semester} Completion Breakdown
+            </h3>
             <div className="flex items-center justify-between">
               <div className="w-1/2 h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -119,84 +133,82 @@ export default function Dashboard() {
                   { label: 'Tests', value: currentProgress.tests_attempted, total: currentProgress.total_tests },
                   { label: 'Courses', value: currentProgress.courses_completed, total: currentProgress.total_courses },
                 ].map((item) => (
-                  <div key={item.label} className="p-2 rounded-xl bg-gray-50 dark:bg-gray-700">
-                    <p className="text-xl font-bold text-blue-600">{item.value ?? '0'}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{item.label}</p>
+                  <div key={item.label} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{item.value ?? '0'}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{item.label}</p>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* SGPA Trend Line Chart */}
+        {/* SGPA Trend */}
         {sgpaData.length > 0 && (
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">SGPA Trend</h3>
+          <Card p="p-6">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">SGPA Performance Trend</h3>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={sgpaData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 10]} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
-                  <Line type="monotone" dataKey="sgpa" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="sgpa" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </Card>
         )}
       </div>
 
-      {/* Course Graphs Section */}
+      {/* Course Bar Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Assignment Progress Graph */}
         {dashboard?.course_assignment_stats && dashboard.course_assignment_stats.length > 0 && (
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Assignment Submission Status</h3>
+          <Card p="p-6">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">Assignment Submissions by Course</h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboard.course_assignment_stats} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="course_name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="submitted" name="Submitted" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="total" name="Total Assigned" fill="#1e293b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="submitted" name="Submitted" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" name="Total Assigned" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* Test Performance Graph */}
         {dashboard?.course_test_stats && dashboard.course_test_stats.length > 0 && (
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Average Test Scores (%)</h3>
+          <Card p="p-6">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">Average Test Performance (%)</h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboard.course_test_stats} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="course_name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#f1f5f9' }} />
-                  <Bar dataKey="avg_score" name="Average Score" fill="#10b981" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="avg_score" name="Average Score" fill="#16a34a" radius={[4, 4, 0, 0]}>
                     {dashboard.course_test_stats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.avg_score >= 75 ? '#10b981' : '#f59e0b'} />
+                      <Cell key={`cell-${index}`} fill={entry.avg_score >= 75 ? '#16a34a' : '#d97706'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </Card>
         )}
       </div>
 
-      {/* Current semester courses */}
+      {/* Courses Grid */}
       {courses.length > 0 && (
-        <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+        <Card p="p-6">
+          <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">
             Current Semester Courses
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,14 +222,14 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Semester timeline */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Academic Progress</h3>
+      <Card p="p-6">
+        <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-4">Academic Progression Timeline</h3>
         <SemesterTimeline semesters={semesters} />
-      </div>
+      </Card>
     </div>
   )
 }

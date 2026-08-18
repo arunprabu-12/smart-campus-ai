@@ -1,15 +1,16 @@
 /**
  * Route table for the whole app.
- * - Protected routes redirect to /login if not authenticated.
- * - Admin at /admin — no link in nav, secret access only.
+ * - Public landing page at /welcome (default for unauthenticated users).
+ * - Protected routes redirect to /welcome if not authenticated.
+ * - Admin at /admin-login — secret access only.
  * - Profile only accessible via TopNav avatar icon → /profile.
  */
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Sidebar from './components/Sidebar.jsx'
 import TopNav from './components/TopNav.jsx'
-import Footer from './components/Footer.jsx'
 
+import Welcome from './pages/Welcome.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CoursePage from './pages/CoursePage.jsx'
 import Assignments from './pages/Assignments.jsx'
@@ -23,10 +24,26 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Attendance from './pages/Attendance.jsx'
 import TestReport from './pages/TestReport.jsx'
+
+// Admin imports
 import AdminLogin from './pages/Admin/AdminLogin.jsx'
-import AdminPanel from './pages/Admin/AdminPanel.jsx'
+import AdminLayout from './pages/Admin/AdminLayout.jsx'
+import AdminDashboard from './pages/Admin/AdminDashboard.jsx'
+import Students from './pages/Admin/Students.jsx'
+import Faculty from './pages/Admin/Faculty.jsx'
+import StaffAllocation from './pages/Admin/StaffAllocation.jsx'
+import Courses from './pages/Admin/Courses.jsx'
+import AssignmentsAdmin from './pages/Admin/AssignmentsAdmin.jsx'
+import TestsAdmin from './pages/Admin/TestsAdmin.jsx'
+import AttendanceAdmin from './pages/Admin/AttendanceAdmin.jsx'
+import Analytics from './pages/Admin/Analytics.jsx'
+import Reports from './pages/Admin/Reports.jsx'
+import AdminAIAssistant from './pages/Admin/AdminAIAssistant.jsx'
+import Announcements from './pages/Admin/Announcements.jsx'
+import FeedbackAdmin from './pages/Admin/FeedbackAdmin.jsx'
+import AdminSettings from './pages/Admin/AdminSettings.jsx'
+
 import AgentsHub from './pages/AgentsHub.jsx'
-import Simulator from './pages/Simulator.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
 import { useAdminAuth } from './context/AdminAuthContext'
 
@@ -34,43 +51,30 @@ function RequireAuth({ children }) {
   const { token, loading } = useAuth()
   if (loading) {
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f0c29, #302b63)',
-      }}>
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-        }}>
-          <div style={{
-            width: '48px', height: '48px', borderRadius: '50%',
-            border: '3px solid #6366f1', borderTopColor: 'transparent',
-            animation: 'spin 1s linear infinite',
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>Loading...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-900 text-slate-400 text-sm">
+        Loading...
       </div>
     )
   }
-  return token ? children : <Navigate to="/login" replace />
+  return token ? children : <Navigate to="/welcome" replace />
 }
 
 function RequireAdminAuth({ children }) {
   const { token, loading } = useAdminAuth()
-  if (loading) return <div style={{ minHeight: '100vh', background: '#0f0c29' }} />
+  if (loading) return <div className="min-h-screen bg-slate-900" />
   return token ? children : <Navigate to="/admin-login" replace />
 }
 
 function AppLayout({ children }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a' }}>
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopNav />
-        <main style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          {children}
-          <Footer />
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
@@ -82,15 +86,39 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Student public routes */}
+      {/* Public Landing / Welcome Route */}
+      <Route path="/welcome" element={<Welcome />} />
+
+      {/* Student public auth routes */}
       <Route path="/login" element={token ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={token ? <Navigate to="/" replace /> : <Register />} />
 
       {/* Admin public route */}
       <Route path="/admin-login" element={<AdminLogin />} />
 
-      {/* Admin protected — completely separate from student layout */}
-      <Route path="/admin-panel/*" element={<RequireAdminAuth><AdminPanel /></RequireAdminAuth>} />
+      {/* Admin protected layout & sub-routes */}
+      <Route path="/admin" element={<RequireAdminAuth><AdminLayout /></RequireAdminAuth>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="students" element={<Students />} />
+        <Route path="faculty" element={<Faculty />} />
+        <Route path="courses" element={<Courses />} />
+        <Route path="assignments" element={<AssignmentsAdmin />} />
+        <Route path="tests" element={<TestsAdmin />} />
+        <Route path="attendance" element={<AttendanceAdmin />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="ai" element={<AdminAIAssistant />} />
+        <Route path="ai/faculty-allocation" element={<StaffAllocation />} />
+        <Route path="ai/assignment-generator" element={<AssignmentsAdmin isGeneratorMode={true} />} />
+        <Route path="ai/test-generator" element={<TestsAdmin isGeneratorMode={true} />} />
+        <Route path="ai/academic-analyzer" element={<Analytics />} />
+        <Route path="announcements" element={<Announcements />} />
+        <Route path="feedback" element={<FeedbackAdmin />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
+
+      {/* Backwards compatibility for /admin-panel */}
+      <Route path="/admin-panel/*" element={<Navigate to="/admin" replace />} />
 
       {/* Student protected routes */}
       <Route path="/" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
@@ -106,10 +134,9 @@ export default function App() {
       <Route path="/profile" element={<RequireAuth><AppLayout><Profile /></AppLayout></RequireAuth>} />
       <Route path="/attendance" element={<RequireAuth><AppLayout><Attendance /></AppLayout></RequireAuth>} />
       <Route path="/agents" element={<RequireAuth><AppLayout><AgentsHub /></AppLayout></RequireAuth>} />
-      <Route path="/simulator" element={<RequireAuth><AppLayout><Simulator /></AppLayout></RequireAuth>} />
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to={token ? "/" : "/welcome"} replace />} />
     </Routes>
   )
 }

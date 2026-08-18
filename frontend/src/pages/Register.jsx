@@ -37,14 +37,18 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    if (!form.department_id || !form.regulation_id) {
+      setError('Please select both Department and Regulation.')
+      return
+    }
     setLoading(true)
     try {
       const payload = {
         ...form,
-        department_id: parseInt(form.department_id),
-        regulation_id: parseInt(form.regulation_id),
-        admission_year: parseInt(form.admission_year),
-        current_semester: parseInt(form.current_semester),
+        department_id: parseInt(form.department_id, 10),
+        regulation_id: parseInt(form.regulation_id, 10),
+        admission_year: parseInt(form.admission_year, 10),
+        current_semester: parseInt(form.current_semester, 10),
       }
       await register(payload)
       navigate('/')

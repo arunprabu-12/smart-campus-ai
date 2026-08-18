@@ -589,30 +589,16 @@ def attendance_overview(
             "at_risk": pct < 75 and total > 0,
         })
     return result
-    return result
 
 
 # ════════════════════════════════════════════════════════
 # Staff Actions (Add tests, Edit attempts, AI Eval, Mark Attendance)
 # ════════════════════════════════════════════════════════
 
-class TestCreate(BaseModel):
-    title: str
-    test_type: str
-    course_id: int
-
 class AssignmentCreate(BaseModel):
     title: str
     course_id: int
     questions: Optional[str] = None
-
-@router.post("/tests")
-def create_test(data: TestCreate, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):
-    new_test = Test(title=data.title, test_type=data.test_type, course_id=data.course_id)
-    db.add(new_test)
-    db.commit()
-    db.refresh(new_test)
-    return {"message": "Test created", "id": new_test.id}
 
 @router.post("/tests/ai-generate")
 def generate_test_ai(course_id: int, topic: str, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):

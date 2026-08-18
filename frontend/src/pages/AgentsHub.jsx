@@ -1,43 +1,50 @@
 import { useState } from 'react'
 import { getPeerMatches, generateQuiz, searchSmart } from '../api/agents'
+import Simulator from './Simulator'
+import { PageHeader } from '../components/ui/PageHeader'
+import { Card } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 
 export default function AgentsHub() {
-  const [activeTab, setActiveTab] = useState('peers') // 'peers', 'quiz', 'search'
+  const [activeTab, setActiveTab] = useState('peers') // 'peers', 'quiz', 'search', 'simulator'
 
   return (
-    <div className="flex justify-center w-full">
-      <div className="space-y-6 w-full max-w-4xl px-4 md:px-0">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">AI Agents Hub</h2>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="AI Hub & Simulator"
+        description="Interact with intelligent agents for peer matching, practice quiz generation, and semantic search."
+      />
 
-        {/* Tabs */}
-        <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700">
-          {[
-            { id: 'peers', label: '👥 Peer-Matching Agent' },
-            { id: 'quiz', label: '📝 Dynamic Quiz Agent' },
-            { id: 'search', label: '🔍 Smart Search Agent' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div className="flex space-x-1 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+        {[
+          { id: 'peers', label: '👥 Peer-Matching Agent' },
+          { id: 'quiz', label: '📝 Dynamic Quiz Agent' },
+          { id: 'search', label: '🔍 Smart Search Agent' },
+          { id: 'simulator', label: '⚙️ Academic Simulator' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all shrink-0 ${
+              activeTab === tab.id
+                ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-t-2 border-blue-600 dark:border-blue-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Content */}
-        <div className="pt-4">
-          {activeTab === 'peers' && <PeerMatchingTab />}
-          {activeTab === 'quiz' && <DynamicQuizTab />}
-          {activeTab === 'search' && <SmartSearchTab />}
-        </div>
+      {/* Tab Content */}
+      <div className="pt-2">
+        {activeTab === 'peers' && <PeerMatchingTab />}
+        {activeTab === 'quiz' && <DynamicQuizTab />}
+        {activeTab === 'search' && <SmartSearchTab />}
+        {activeTab === 'simulator' && <Simulator />}
       </div>
     </div>
   )
@@ -59,36 +66,36 @@ function PeerMatchingTab() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Find Study Partners</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          This agent analyzes your weak topics and finds classmates who are strong in those areas to form optimal study groups.
+    <div className="space-y-6">
+      <Card p="p-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Find AI-Recommended Study Partners</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Analyzes your learning metrics and pairs you with peers who excel in topics you are trying to master.
         </p>
-        <button
+        <Button
+          variant="primary"
           onClick={handleFindPeers}
           disabled={loading}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
-          {loading ? 'Analyzing Database...' : '✨ Autogenerate Peer Matches'}
-        </button>
-      </div>
+          {loading ? 'Analyzing Peer Profiles...' : '✨ Find Matching Study Peers'}
+        </Button>
+      </Card>
 
       {matches.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {matches.map(m => (
-            <div key={m.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xl flex-shrink-0">
+            <Card key={m.id} p="p-5" className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xl shrink-0">
                 {m.name.charAt(0)}
               </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{m.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{m.career_interest || 'Student'}</p>
-                <div className="mt-2 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-md inline-block">
-                  {m.match_score} Match: {m.reason}
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900 dark:text-white text-base">{m.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{m.career_interest || 'Student'}</p>
+                <div className="mt-2">
+                  <Badge variant="success">{m.match_score} Match: {m.reason}</Badge>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -113,49 +120,59 @@ function DynamicQuizTab() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Generate Practice Quiz</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          This agent reads the course material and autonomously writes a multiple-choice quiz tailored to test your understanding.
+    <div className="space-y-6">
+      <Card p="p-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Autonomous Practice Quiz Generator</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Generates instant multiple-choice practice questions from selected course modules.
         </p>
         <div className="flex items-center gap-4">
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">Course ID:</label>
-            <input type="number" min="1" value={courseId} onChange={(e) => setCourseId(e.target.value)} className="w-20 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white" />
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">Course ID:</label>
+            <Input
+              type="number"
+              min="1"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              className="w-24"
+            />
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="mt-5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {loading ? 'Generating from HuggingFace...' : '⚡ Generate New Quiz'}
-          </button>
+          <div className="mt-5">
+            <Button
+              variant="primary"
+              onClick={handleGenerate}
+              disabled={loading}
+            >
+              {loading ? 'Generating Questions...' : '⚡ Generate Practice Quiz'}
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {quiz && (
-        <div className="p-6 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10">
-          <h4 className="font-bold text-xl text-blue-900 dark:text-blue-100 mb-4">{quiz.title}</h4>
-          <div className="space-y-6">
+        <Card p="p-6" className="bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <h4 className="font-bold text-xl text-blue-900 dark:text-blue-200 mb-4">{quiz.title}</h4>
+          <div className="space-y-4">
             {quiz.questions.map((q, idx) => (
-              <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                <p className="font-medium text-gray-900 dark:text-white mb-3">{idx + 1}. {q.question}</p>
+              <Card key={idx} p="p-4">
+                <p className="font-semibold text-slate-900 dark:text-white mb-3 text-sm">{idx + 1}. {q.question}</p>
                 <div className="space-y-2">
                   {q.options.map((opt, i) => (
-                    <label key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                      <input type="radio" name={`q-${idx}`} className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{opt}</span>
+                    <label key={i} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border border-slate-100 dark:border-slate-700/60 transition-colors text-xs text-slate-700 dark:text-slate-300">
+                      <input type="radio" name={`q-${idx}`} className="text-blue-600 focus:ring-blue-500" />
+                      <span>{opt}</span>
                     </label>
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
-          <button className="mt-6 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold transition-colors w-full">
-            Submit Answers
-          </button>
-        </div>
+          <div className="mt-6">
+            <Button variant="primary" className="w-full">
+              Submit Answers
+            </Button>
+          </div>
+        </Card>
       )}
     </div>
   )
@@ -181,44 +198,41 @@ function SmartSearchTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Semantic Document Search</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Type a concept or question. The agent uses Sentence-Transformers to find paragraphs with matching meaning, not just exact keywords.
+      <Card p="p-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Semantic Curriculum Search</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Searches course materials by contextual meaning using vector embeddings.
         </p>
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. how does gravity work..."
-            className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {loading ? 'Searching Vectors...' : '🔍 Search'}
-          </button>
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search concepts, e.g. neural network activation functions..."
+            />
+          </div>
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Searching...' : '🔍 Search'}
+          </Button>
         </form>
-      </div>
+      </Card>
 
       {results.length > 0 && (
         <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Found {results.length} relevant matches:</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            {results.length} Matches Found
+          </p>
           {results.map((r, i) => (
-            <div key={i} className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <Card key={i} p="p-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">{r.title}</span>
-                <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-0.5 rounded-full font-medium">
-                  {r.similarity}% Match
-                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">{r.title}</span>
+                <Badge variant="info">{r.similarity}% Match</Badge>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 "{r.content}"
               </p>
-            </div>
+            </Card>
           ))}
         </div>
       )}
