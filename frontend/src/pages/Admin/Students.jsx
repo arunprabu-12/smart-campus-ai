@@ -1,237 +1,175 @@
 import { useState, useEffect } from 'react'
-import { useAdminAuth } from '../../context/AdminAuthContext'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
-import { DataTable } from '../../components/ui/DataTable'
-import { Modal } from '../../components/ui/Modal'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useAdminAuth } from '../../context/AdminAuthContext'
 
 export default function Students() {
   const { api } = useAdminAuth()
   const [students, setStudents] = useState([])
+  const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [deptFilter, setDeptFilter] = useState('')
-  const [semFilter, setSemFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  
-  // Modal states
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState(null)
-  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
-  const [studentToDeactivate, setStudentToDeactivate] = useState(null)
+  const [search, setSearch] = useState('')
+  const [filterDept, setFilterDept] = useState('')
+  const [filterSem, setFilterSem] = useState('')
+  const [resetModal, setResetModal] = useState(null) // { id, name }
+  const [newPassword, setNewPassword] = useState('')
+  const [resetMsg, setResetMsg] = useState('')
 
-  // Form State
-  const [formData, setFormData] = useState({
-    full_name: '',
-    college_email: '',
-    register_number: '',
-    department_id: 'AIDS',
-    current_semester: 5,
-    cgpa: 8.5,
-    status: 'Active'
-  })
-
-  useEffect(() => {
-    fetchStudents()
-  }, [])
-
-  const fetchStudents = async () => {
+  const load = async () => {
     setLoading(true)
     try {
-      const res = await api.get('/admin-auth/students')
-      setStudents(res.data || [])
-    } catch {
-      // Mock data if endpoint not populating mock list
-      setStudents([
-        { id: 1, full_name: 'Arun Kumar', register_number: '312221205001', college_email: 'arun@college.edu', department_id: 'AIDS', current_semester: 5, attendance: '68%', cgpa: 8.4, status: 'Active' },
-        { id: 2, full_name: 'Divya S', register_number: '312221205014', college_email: 'divya@college.edu', department_id: 'AIDS', current_semester: 4, attendance: '71%', cgpa: 7.9, status: 'Active' },
-        { id: 3, full_name: 'Kapil Dev', register_number: '312221205022', college_email: 'kapil@college.edu', department_id: 'CSE', current_semester: 6, attendance: '92%', cgpa: 9.1, status: 'Active' },
-        { id: 4, full_name: 'Jayasree M', register_number: '312221205035', college_email: 'jayasree@college.edu', department_id: 'ECE', current_semester: 5, attendance: '88%', cgpa: 8.8, status: 'Inactive' },
+      const params = new URLSearchParams()
+      if (filterDept) params.set('department_id', filterDept)
+      if (filterSem) params.set('semester', filterSem)
+      if (search) params.set('search', search)
+      const [studRes, deptRes] = await Promise.all([
+        api.get(`/admin/students?${params}`),
+        api.get('/admin/departments'),
       ])
-    }
-    setLoading(false)
-  }
-
-  const handleSaveStudent = async (e) => {
-    e.preventDefault()
-    try {
-      if (showEditModal && selectedStudent) {
-        setStudents(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, ...formData } : s))
-        alert('Student profile updated successfully!')
-      } else {
-        const newStu = { id: Date.now(), ...formData, attendance: '85%' }
-        setStudents(prev => [newStu, ...prev])
-        alert('New student added successfully!')
-      }
-      setShowAddModal(false)
-      setShowEditModal(false)
+      setStudents(studRes.data)
+      setDepartments(deptRes.data)
     } catch (e) {
-      alert('Failed to save student record')
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDeactivate = () => {
-    if (!studentToDeactivate) return
-    setStudents(prev => prev.map(s => s.id === studentToDeactivate.id ? { ...s, status: s.status === 'Active' ? 'Inactive' : 'Active' } : s))
-    setStudentToDeactivate(null)
+  useEffect(() => { load() }, [filterDept, filterSem])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    load()
   }
 
-  const filteredStudents = students.filter(s => {
-    if (deptFilter && s.department_id !== deptFilter) return false
-    if (semFilter && String(s.current_semester) !== String(semFilter)) return false
-    if (statusFilter && s.status !== statusFilter) return false
-    return true
-  })
-
-  const columns = [
-    {
-      key: 'full_name',
-      label: 'Student',
-      render: (row) => (
-        <div>
-          <div className="font-semibold text-slate-900 dark:text-white">{row.full_name}</div>
-          <div className="text-xs text-slate-500">{row.college_email}</div>
-        </div>
-      )
-    },
-    { key: 'register_number', label: 'Register Number' },
-    { key: 'department_id', label: 'Department' },
-    { key: 'current_semester', label: 'Semester', render: (row) => `Sem ${row.current_semester}` },
-    { key: 'attendance', label: 'Attendance', render: (row) => <span className="font-semibold text-emerald-600 dark:text-emerald-400">{row.attendance || '85%'}</span> },
-    { key: 'cgpa', label: 'CGPA', render: (row) => <span className="font-bold text-slate-800 dark:text-slate-200">{row.cgpa ? Number(row.cgpa).toFixed(2) : '8.50'}</span> },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (row) => (
-        <Badge variant={row.status === 'Active' ? 'success' : 'neutral'}>
-          {row.status || 'Active'}
-        </Badge>
-      )
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setSelectedStudent(row); setFormData(row); setShowEditModal(true); }}>
-            Edit
-          </Button>
-          <Button
-            variant={row.status === 'Active' ? 'danger' : 'secondary'}
-            size="sm"
-            onClick={() => { setStudentToDeactivate(row); setShowDeactivateConfirm(true); }}
-          >
-            {row.status === 'Active' ? 'Deactivate' : 'Activate'}
-          </Button>
-        </div>
-      )
+  const handleResetPassword = async () => {
+    if (!newPassword.trim() || !resetModal) return
+    try {
+      await api.put(`/admin/students/${resetModal.id}/reset-password`, { new_password: newPassword })
+      setResetMsg(`Password reset for ${resetModal.name}!`)
+      setNewPassword('')
+      setTimeout(() => { setResetModal(null); setResetMsg('') }, 1500)
+    } catch (e) {
+      setResetMsg('Failed: ' + (e.response?.data?.detail || e.message))
     }
-  ]
+  }
+
+  const semBadge = (s) => {
+    const colors = ['bg-blue-100 text-blue-700', 'bg-indigo-100 text-indigo-700', 'bg-cyan-100 text-cyan-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-violet-100 text-violet-700', 'bg-pink-100 text-pink-700', 'bg-slate-100 text-slate-700']
+    return colors[(s - 1) % 8] || 'bg-slate-100 text-slate-700'
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Student Management"
-        description="Register, edit, filter, and monitor student academic records."
-        action={
-          <Button variant="primary" onClick={() => { setFormData({ full_name: '', college_email: '', register_number: '', department_id: 'AIDS', current_semester: 5, cgpa: 8.5, status: 'Active' }); setShowAddModal(true); }}>
-            + Add New Student
-          </Button>
-        }
+        description={`${students.length} students found · All departments`}
       />
 
-      {/* Filters Bar */}
+      {/* Filters */}
       <Card p="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
-            <option value="">All Departments</option>
-            <option value="AIDS">AIDS</option>
-            <option value="CSE">CSE</option>
-            <option value="ECE">ECE</option>
-            <option value="MECH">MECH</option>
-          </Select>
-          <Select value={semFilter} onChange={(e) => setSemFilter(e.target.value)}>
-            <option value="">All Semesters</option>
-            {[1,2,3,4,5,6,7,8].map(s => (
-              <option key={s} value={s}>Semester {s}</option>
-            ))}
-          </Select>
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </Select>
+        <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 block mb-1">Search</label>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Name, email, reg. no…"
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 w-56"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 block mb-1">Department</label>
+            <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100">
+              <option value="">All Departments</option>
+              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 block mb-1">Semester</label>
+            <select value={filterSem} onChange={e => setFilterSem(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100">
+              <option value="">All Semesters</option>
+              {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+            </select>
+          </div>
+          <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">
+            Search
+          </button>
+          <button type="button" onClick={() => { setSearch(''); setFilterDept(''); setFilterSem(''); setTimeout(load, 0) }} className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            Clear
+          </button>
+        </form>
+      </Card>
+
+      {/* Table */}
+      <Card p="p-0" className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                {['#', 'Name', 'Reg. No', 'Email', 'Department', 'Sem', 'CGPA', 'Actions'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr><td colSpan={8} className="py-12 text-center text-slate-400 text-sm">Loading students…</td></tr>
+              ) : students.length === 0 ? (
+                <tr><td colSpan={8} className="py-12 text-center text-slate-400 text-sm">No students found. Try clearing filters.</td></tr>
+              ) : students.map((s, i) => (
+                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 text-slate-400 text-xs">{i + 1}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{s.full_name}</td>
+                  <td className="px-4 py-3 text-slate-600 font-mono text-xs">{s.register_number}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{s.college_email}</td>
+                  <td className="px-4 py-3 text-slate-600 text-xs">{s.department_name}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${semBadge(s.current_semester)}`}>Sem {s.current_semester}</span>
+                  </td>
+                  <td className="px-4 py-3 font-bold text-blue-600">{s.cgpa?.toFixed(2) || '—'}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setResetModal({ id: s.id, name: s.full_name })}
+                      className="px-2.5 py-1 text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-100 transition"
+                    >
+                      🔑 Reset Pwd
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </Card>
 
-      {/* Data Table */}
-      <DataTable
-        cols={columns}
-        data={filteredStudents}
-        searchKey="full_name"
-        placeholder="Search student name or register no..."
-      />
-
-      {/* Add / Edit Modal */}
-      {(showAddModal || showEditModal) && (
-        <Modal
-          isOpen={true}
-          onClose={() => { setShowAddModal(false); setShowEditModal(false); }}
-          title={showEditModal ? 'Edit Student Details' : 'Add New Student'}
-        >
-          <form onSubmit={handleSaveStudent} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 block mb-1">Full Name</label>
-              <Input required value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="e.g. Arun Kumar" />
+      {/* Password Reset Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 w-full max-w-sm mx-4">
+            <h3 className="font-bold text-slate-900 text-base mb-1">Reset Password</h3>
+            <p className="text-sm text-slate-500 mb-4">Setting new password for <strong>{resetModal.name}</strong></p>
+            <input
+              type="password"
+              placeholder="New password (min 6 chars)"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 mb-3"
+            />
+            {resetMsg && <p className={`text-xs mb-3 ${resetMsg.startsWith('Failed') ? 'text-red-600' : 'text-emerald-600'}`}>{resetMsg}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleResetPassword} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">
+                Reset Password
+              </button>
+              <button onClick={() => { setResetModal(null); setNewPassword(''); setResetMsg('') }} className="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm text-slate-600 hover:bg-slate-50">
+                Cancel
+              </button>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-500 block mb-1">College Email</label>
-              <Input required type="email" value={formData.college_email} onChange={(e) => setFormData({ ...formData, college_email: e.target.value })} placeholder="e.g. arun@college.edu" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-500 block mb-1">Register Number</label>
-              <Input required value={formData.register_number} onChange={(e) => setFormData({ ...formData, register_number: e.target.value })} placeholder="e.g. 312221205001" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 block mb-1">Department</label>
-                <Select value={formData.department_id} onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}>
-                  <option value="AIDS">AIDS</option>
-                  <option value="CSE">CSE</option>
-                  <option value="ECE">ECE</option>
-                  <option value="MECH">MECH</option>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 block mb-1">Semester</label>
-                <Select value={formData.current_semester} onChange={(e) => setFormData({ ...formData, current_semester: Number(e.target.value) })}>
-                  {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-3">
-              <Button variant="outline" type="button" onClick={() => { setShowAddModal(false); setShowEditModal(false); }}>Cancel</Button>
-              <Button variant="primary" type="submit">Save Student Record</Button>
-            </div>
-          </form>
-        </Modal>
+          </div>
+        </div>
       )}
-
-      {/* Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeactivateConfirm}
-        onClose={() => setShowDeactivateConfirm(false)}
-        onConfirm={handleDeactivate}
-        title="Toggle Account Status"
-        message={`Are you sure you want to ${studentToDeactivate?.status === 'Active' ? 'deactivate' : 'activate'} ${studentToDeactivate?.full_name}?`}
-        confirmLabel={studentToDeactivate?.status === 'Active' ? 'Deactivate' : 'Activate'}
-        isDanger={studentToDeactivate?.status === 'Active'}
-      />
     </div>
   )
 }
