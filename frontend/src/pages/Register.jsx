@@ -10,7 +10,7 @@ export default function Register() {
   const [form, setForm] = useState({
     full_name: '', register_number: '', college_email: '', password: '',
     department_id: '', regulation_id: '', admission_year: new Date().getFullYear(),
-    current_semester: 1, section: '', career_interest: '',
+    current_semester: 1, section: '',
   })
   const [previousGpas, setPreviousGpas] = useState({})
   const [departments, setDepartments] = useState([])
@@ -151,10 +151,6 @@ export default function Register() {
                 <select id="reg-semester" name="current_semester" className={inputCls} value={form.current_semester} onChange={handleChange}>
                   {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
                 </select>
-              </div>
-              <div className="col-span-2">
-                <label className={labelCls}>Career Interest</label>
-                <input id="reg-career" name="career_interest" className={inputCls} placeholder="e.g. Machine Learning Engineer" value={form.career_interest} onChange={handleChange} />
               </div>
             </div>
 
