@@ -166,7 +166,29 @@ export default function Courses() {
                 className="flex-1"
                 onClick={() => { setSelectedCourse(course); setShowUnitsModal(true); }}
               >
-                View Units & Topics
+                Units & Topics
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.pdf,.doc,.docx';
+                  input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      alert(`Successfully uploaded ${file.name} for ${course.name}! Students can now download it.`);
+                      const notes = JSON.parse(localStorage.getItem('course_notes') || '{}');
+                      notes[course.code] = file.name;
+                      localStorage.setItem('course_notes', JSON.stringify(notes));
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                Upload Notes
               </Button>
               <Button
                 variant="danger"

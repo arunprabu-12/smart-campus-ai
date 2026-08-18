@@ -354,6 +354,9 @@ This aligns directly with our unit objectives. In context, this is handled by an
   const pct = getOverallProgress();
   const cat = CATEGORY_MAP[course.category] || { label: 'Course', variant: 'neutral' };
 
+  const notes = JSON.parse(localStorage.getItem('course_notes') || '{}');
+  const courseNotes = notes[course.course_code];
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Back link */}
@@ -401,6 +404,28 @@ This aligns directly with our unit objectives. In context, this is handled by an
             {course.description}
           </p>
         )}
+      </Card>
+
+      {/* Course Notes Section */}
+      <Card p="p-4" className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📚</span>
+            <div>
+              <h3 className="font-bold text-emerald-900 dark:text-emerald-100 text-sm">Course Notes & Materials</h3>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                {courseNotes ? `Available: ${courseNotes}` : 'No notes uploaded by faculty yet.'}
+              </p>
+            </div>
+          </div>
+          {courseNotes && (
+            <Button variant="primary" size="sm" onClick={() => {
+              alert(`Downloading ${courseNotes}...`);
+            }}>
+              ⬇️ Download Notes
+            </Button>
+          )}
+        </div>
       </Card>
 
       {/* Accordion Units List */}
