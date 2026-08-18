@@ -44,7 +44,7 @@ export function AdminAuthProvider({ children }) {
     const { access_token, role, name } = res.data
     localStorage.setItem('admin_token', access_token)
     setToken(access_token)
-    setAdmin({ email, role, full_name: name })
+    await fetchAdminProfile(access_token)
     return role
   }
 

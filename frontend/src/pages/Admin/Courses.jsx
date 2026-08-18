@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { semestersData } from '../../data/coursesData'
 
 export default function Courses() {
   const { api } = useAdminAuth()
@@ -67,9 +68,29 @@ export default function Courses() {
     setCourseToDelete(null)
   }
 
+  const { admin } = useAdminAuth()
+
   const filtered = courses.filter(c => {
     if (semFilter && String(c.semester) !== String(semFilter)) return false
     if (deptFilter && c.department !== deptFilter) return false
+    
+    // Staff role filter based on assigned courses
+    if (admin?.role === 'staff') {
+      const staffDept = admin.department || '';
+      const staffName = admin.full_name || '';
+      
+      const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      
+      const matchesFaculty = c.faculty?.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(c.faculty?.toLowerCase());
+      const matchesAssigned = assignedCourses.some(assigned => 
+        c.name.toLowerCase().includes(assigned) || 
+        assigned.includes(c.name.toLowerCase()) ||
+        c.code.toLowerCase().includes(assigned)
+      );
+      
+      if (!matchesFaculty && !matchesAssigned) return false;
+    }
+    
     return true
   })
 
@@ -202,32 +223,59 @@ export default function Courses() {
       )}
 
       {/* Units & Topics Hierarchy View Modal */}
-      {showUnitsModal && selectedCourse && (
-        <Modal isOpen={true} onClose={() => setShowUnitsModal(false)} title={`${selectedCourse.code} — Units & Topics Breakdown`}>
-          <div className="space-y-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Department: {selectedCourse.department} | Semester: {selectedCourse.semester} | Faculty: {selectedCourse.faculty}
-            </p>
+      {showUnitsModal && selectedCourse && (() => {
+        let staticCourseMatch = null;
+        for (const semNum in semestersData) {
+          const found = semestersData[semNum].find(c => c.course_code === selectedCourse.code);
+          if (found) {
+            staticCourseMatch = found;
+            break;
+          }
+        }
+        
+        return (
+          <Modal isOpen={true} onClose={() => setShowUnitsModal(false)} title={`${selectedCourse.code} — Units & Topics Breakdown`}>
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Department: {selectedCourse.department} | Semester: {selectedCourse.semester} | Faculty: {selectedCourse.faculty}
+              </p>
 
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-              {[1, 2, 3, 4, 5].map(unitNum => (
-                <div key={unitNum} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h5 className="font-bold text-slate-900 dark:text-white text-xs mb-1">
-                    Unit {unitNum}: Fundamental Concepts of Module {unitNum}
-                  </h5>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Topics: Key theoretical principles, architecture, mathematical formulation, practical lab exercises, and assignment unit questions.
-                  </p>
-                </div>
-              ))}
-            </div>
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                {staticCourseMatch ? (
+                  staticCourseMatch.units.map((unit, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-xs mb-1">
+                        Unit {idx + 1}: {unit.title}
+                      </h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">
+                        🎯 Objectives: {unit.learning_objectives}
+                      </p>
+                      <p className="text-[11px] text-slate-700 dark:text-slate-300">
+                        <strong>Topics:</strong> {unit.topics?.join(', ')}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  [1, 2, 3, 4, 5].map(unitNum => (
+                    <div key={unitNum} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-xs mb-1">
+                        Unit {unitNum}: Fundamental Concepts of Module {unitNum}
+                      </h5>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Topics: Key theoretical principles, architecture, mathematical formulation, practical lab exercises, and assignment unit questions.
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
 
-            <div className="flex justify-end pt-2">
-              <Button variant="outline" onClick={() => setShowUnitsModal(false)}>Close</Button>
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowUnitsModal(false)}>Close</Button>
+              </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* Delete Confirmation */}
       <ConfirmDialog

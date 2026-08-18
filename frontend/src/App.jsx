@@ -13,6 +13,7 @@ import TopNav from './components/TopNav.jsx'
 import Welcome from './pages/Welcome.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CoursePage from './pages/CoursePage.jsx'
+import CoursesList from './pages/CoursesList.jsx'
 import Assignments from './pages/Assignments.jsx'
 import Tests from './pages/Tests.jsx'
 import Results from './pages/Results.jsx'
@@ -122,6 +123,7 @@ export default function App() {
 
       {/* Student protected routes */}
       <Route path="/" element={<RequireAuth><AppLayout><Dashboard /></AppLayout></RequireAuth>} />
+      <Route path="/courses" element={<RequireAuth><AppLayout><CoursesList /></AppLayout></RequireAuth>} />
       <Route path="/courses/:courseId" element={<RequireAuth><AppLayout><CoursePage /></AppLayout></RequireAuth>} />
       <Route path="/assignments" element={<RequireAuth><AppLayout><Assignments /></AppLayout></RequireAuth>} />
       <Route path="/tests" element={<RequireAuth><AppLayout><Tests /></AppLayout></RequireAuth>} />
