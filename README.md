@@ -1,6 +1,6 @@
 # 🎓 AI Academic Platform
 
-### 🔗 Live Demo: [https://arunprabu-12.github.io/smart-campus-ai/](https://arunprabu-12.github.io/smart-campus-ai/)
+### 🔗 Live Demo: [https://smart-campus-ai-seven.vercel.app](https://smart-campus-ai-seven.vercel.app)
 
 An end-to-end autonomous, multi-agent AI academic platform designed to streamline operations for students and staff. Built with a modern React frontend and a robust FastAPI + PostgreSQL backend, this system integrates LLMs and CrewAI to automate everything from grading and study planning to deep academic advisement.
 
