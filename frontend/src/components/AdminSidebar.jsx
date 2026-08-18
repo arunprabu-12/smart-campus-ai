@@ -11,7 +11,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     logout()
-    navigate('/admin-login')
+    navigate('/login')
   }
 
   const basePath = admin?.role === 'admin' ? '/admin' : '/staff'
@@ -21,12 +21,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
   const mainLinks = [
     { to: `${basePath}`, label: 'Dashboard', icon: '🏠', end: true },
     { to: `${basePath}/students`, label: 'Students', icon: '👨‍🎓' },
-    { to: `${basePath}/faculty`, label: 'Faculty', icon: '👨‍🏫' },
+    ...(isAdmin ? [{ to: `${basePath}/faculty`, label: 'Faculty', icon: '👨‍🏫' }] : []),
     { to: `${basePath}/courses`, label: 'Courses', icon: '📚' },
     { to: `${basePath}/assignments`, label: 'Assignments', icon: '📝' },
     { to: `${basePath}/tests`, label: 'Tests', icon: '🧪' },
     { to: `${basePath}/attendance`, label: 'Attendance', icon: '📊' },
-    { to: `${basePath}/analytics`, label: 'Analytics', icon: '📈' },
+    ...(isAdmin ? [{ to: `${basePath}/analytics`, label: 'Analytics', icon: '📈' }] : []),
     { to: `${basePath}/reports`, label: 'Reports', icon: '📑' },
   ]
 
@@ -40,6 +40,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
   const bottomLinks = [
     { to: `${basePath}/announcements`, label: 'Announcements', icon: '📢' },
     { to: `${basePath}/feedback`, label: 'Feedback', icon: '💬' },
+    { to: `${basePath}/profile`, label: 'Profile', icon: '👤' },
     ...(isAdmin ? [{ to: `${basePath}/settings`, label: 'Settings', icon: '⚙️' }] : []),
   ]
 
@@ -67,7 +68,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 SMART ACADEMIA
               </h1>
               <span className="inline-block mt-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
-                ADMIN PORTAL
+                {isAdmin ? 'ADMIN PORTAL' : 'STAFF PORTAL'}
               </span>
             </div>
           </div>

@@ -172,51 +172,60 @@ export default function Profile() {
         </Button>
       </Card>
 
-      {/* Official Department Feedback */}
+      {/* Requests & Official Feedback */}
       <Card p="p-6">
         <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-2 flex items-center gap-2">
-          <span>💬</span> Official Department Feedback
+          <span>💬</span> Requests & Official Feedback
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Submit formal feedback to your department Head (HOD), Staff, or Admin.
+          Submit formal feedback, request On Duty (OD), or request Leave to your department Head (HOD) or Admin.
         </p>
         <form onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const msg = fd.get('message');
+          const rawMsg = fd.get('message');
           const to = fd.get('to');
-          if (!msg.trim()) return;
+          const type = fd.get('type');
+          if (!rawMsg.trim()) return;
+          const finalMsg = type === 'Feedback' ? rawMsg : `[${type}] ${rawMsg}`;
           try {
-            await api.post('/students/me/feedbacks', { to, message: msg });
-            alert('Official feedback submitted successfully!');
+            await api.post('/students/me/feedbacks', { to, message: finalMsg });
+            alert('Request submitted successfully!');
             e.target.reset();
             loadMyFeedbacks();
           } catch (err) {
-            alert('Failed to submit feedback');
+            alert('Failed to submit request');
           }
         }} className="space-y-3">
-          <Select name="to" required>
-            <option value="Admin">Admin</option>
-            <option value="HOD">HOD (Head of Department)</option>
-            <option value="Department Staff">Department Staff</option>
-          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <Select name="type" required>
+              <option value="Feedback">General Feedback</option>
+              <option value="Request OD">Request OD (On Duty)</option>
+              <option value="Request Leave">Request Leave</option>
+            </Select>
+            <Select name="to" required>
+              <option value="Admin">Admin</option>
+              <option value="HOD">HOD (Head of Department)</option>
+              <option value="Department Staff">Department Staff</option>
+            </Select>
+          </div>
           <textarea 
             name="message"
             rows="3"
-            placeholder="Describe your issue, request, or suggestion..."
+            placeholder="Describe your request, issue, or dates for leave/OD..."
             className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           ></textarea>
           <Button type="submit" variant="primary">
-            Submit Formal Feedback
+            Submit Request / Feedback
           </Button>
         </form>
         
-        {/* Sent Feedbacks & Replies */}
+        {/* Sent Requests */}
         <div className="mt-6 space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">My Feedback History</h4>
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">My Requests & History</h4>
           {myFeedbacks.length === 0 ? (
-            <p className="text-xs text-slate-500">No feedback submitted yet.</p>
+            <p className="text-xs text-slate-500">No requests submitted yet.</p>
           ) : (
             myFeedbacks.map((f, i) => (
               <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">

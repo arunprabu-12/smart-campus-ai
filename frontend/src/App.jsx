@@ -27,7 +27,6 @@ import Attendance from './pages/Attendance.jsx'
 import TestReport from './pages/TestReport.jsx'
 
 // Admin imports
-import AdminLogin from './pages/Admin/AdminLogin.jsx'
 import AdminLayout from './pages/Admin/AdminLayout.jsx'
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx'
 import Students from './pages/Admin/Students.jsx'
@@ -43,6 +42,7 @@ import AdminAIAssistant from './pages/Admin/AdminAIAssistant.jsx'
 import Announcements from './pages/Admin/Announcements.jsx'
 import FeedbackAdmin from './pages/Admin/FeedbackAdmin.jsx'
 import AdminSettings from './pages/Admin/AdminSettings.jsx'
+import StaffProfile from './pages/Admin/StaffProfile.jsx'
 
 import AgentsHub from './pages/AgentsHub.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
@@ -63,7 +63,7 @@ function RequireAuth({ children }) {
 function RequireAdminAuth({ children }) {
   const { token, loading } = useAdminAuth()
   if (loading) return <div className="min-h-screen bg-slate-900" />
-  return token ? children : <Navigate to="/admin-login" replace />
+  return token ? children : <Navigate to="/login" replace />
 }
 
 function AppLayout({ children }) {
@@ -94,9 +94,6 @@ export default function App() {
       <Route path="/login" element={token ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={token ? <Navigate to="/" replace /> : <Register />} />
 
-      {/* Admin public route */}
-      <Route path="/admin-login" element={<AdminLogin />} />
-
       {/* Admin protected layout & sub-routes */}
       <Route path="/admin" element={<RequireAdminAuth><AdminLayout /></RequireAdminAuth>}>
         <Route index element={<AdminDashboard />} />
@@ -116,6 +113,7 @@ export default function App() {
         <Route path="announcements" element={<Announcements />} />
         <Route path="feedback" element={<FeedbackAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<StaffProfile />} />
       </Route>
 
       {/* Staff protected layout & sub-routes */}
@@ -137,6 +135,7 @@ export default function App() {
         <Route path="announcements" element={<Announcements />} />
         <Route path="feedback" element={<FeedbackAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<StaffProfile />} />
       </Route>
 
       {/* Backwards compatibility for /admin-panel */}
