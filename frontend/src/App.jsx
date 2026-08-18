@@ -118,6 +118,27 @@ export default function App() {
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
+      {/* Staff protected layout & sub-routes */}
+      <Route path="/staff" element={<RequireAdminAuth><AdminLayout /></RequireAdminAuth>}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="students" element={<Students />} />
+        <Route path="faculty" element={<Faculty />} />
+        <Route path="courses" element={<Courses />} />
+        <Route path="assignments" element={<AssignmentsAdmin />} />
+        <Route path="tests" element={<TestsAdmin />} />
+        <Route path="attendance" element={<AttendanceAdmin />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="ai" element={<AdminAIAssistant />} />
+        <Route path="ai/faculty-allocation" element={<StaffAllocation />} />
+        <Route path="ai/assignment-generator" element={<AssignmentsAdmin isGeneratorMode={true} />} />
+        <Route path="ai/test-generator" element={<TestsAdmin isGeneratorMode={true} />} />
+        <Route path="ai/academic-analyzer" element={<Analytics />} />
+        <Route path="announcements" element={<Announcements />} />
+        <Route path="feedback" element={<FeedbackAdmin />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
+
       {/* Backwards compatibility for /admin-panel */}
       <Route path="/admin-panel/*" element={<Navigate to="/admin" replace />} />
 

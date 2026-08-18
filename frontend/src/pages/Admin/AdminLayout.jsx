@@ -44,7 +44,7 @@ export default function AdminLayout({ children }) {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => navigate('/admin/ai/faculty-allocation')}
+              onClick={() => navigate(admin?.role === 'admin' ? '/admin/ai/faculty-allocation' : '/staff/ai/assignment-generator')}
             >
               + Quick Action
             </Button>

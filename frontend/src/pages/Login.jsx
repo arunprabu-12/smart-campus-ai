@@ -23,8 +23,12 @@ export default function Login() {
         await studentLogin(email, password)
         navigate('/')
       } else {
-        await adminLogin(email, password)
-        navigate('/admin')
+        const returnedRole = await adminLogin(email, password)
+        if (returnedRole === 'admin') {
+          navigate('/admin')
+        } else {
+          navigate('/staff')
+        }
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.')
@@ -87,13 +91,14 @@ export default function Login() {
 
           {/* Role Tabs */}
           <div className="flex rounded-xl bg-slate-100 p-1 mb-6 gap-1">
-            {['student', 'admin'].map(r => (
+            {['student', 'staff', 'admin'].map(r => (
               <button
                 key={r}
                 onClick={() => setRole(r)}
+                type="button"
                 className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${role === r ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                {r === 'student' ? '🎓 Student' : '⚙️ Admin'}
+                {r === 'student' ? '🎓 Student' : r === 'staff' ? '👨‍🏫 Staff' : '⚙️ Admin'}
               </button>
             ))}
           </div>

@@ -14,29 +14,33 @@ export default function AdminSidebar({ isOpen, onClose }) {
     navigate('/admin-login')
   }
 
+  const basePath = admin?.role === 'admin' ? '/admin' : '/staff'
+  const isHOD = admin?.role === 'admin' || admin?.role === 'HOD'
+  const isAdmin = admin?.role === 'admin'
+
   const mainLinks = [
-    { to: '/admin', label: 'Dashboard', icon: '🏠', end: true },
-    { to: '/admin/students', label: 'Students', icon: '👨‍🎓' },
-    { to: '/admin/faculty', label: 'Faculty', icon: '👨‍🏫' },
-    { to: '/admin/courses', label: 'Courses', icon: '📚' },
-    { to: '/admin/assignments', label: 'Assignments', icon: '📝' },
-    { to: '/admin/tests', label: 'Tests', icon: '🧪' },
-    { to: '/admin/attendance', label: 'Attendance', icon: '📊' },
-    { to: '/admin/analytics', label: 'Analytics', icon: '📈' },
-    { to: '/admin/reports', label: 'Reports', icon: '📑' },
+    { to: `${basePath}`, label: 'Dashboard', icon: '🏠', end: true },
+    { to: `${basePath}/students`, label: 'Students', icon: '👨‍🎓' },
+    { to: `${basePath}/faculty`, label: 'Faculty', icon: '👨‍🏫' },
+    { to: `${basePath}/courses`, label: 'Courses', icon: '📚' },
+    { to: `${basePath}/assignments`, label: 'Assignments', icon: '📝' },
+    { to: `${basePath}/tests`, label: 'Tests', icon: '🧪' },
+    { to: `${basePath}/attendance`, label: 'Attendance', icon: '📊' },
+    { to: `${basePath}/analytics`, label: 'Analytics', icon: '📈' },
+    { to: `${basePath}/reports`, label: 'Reports', icon: '📑' },
   ]
 
   const aiSubLinks = [
-    { to: '/admin/ai/faculty-allocation', label: 'Faculty Allocation' },
-    { to: '/admin/ai/assignment-generator', label: 'Assignment Generator' },
-    { to: '/admin/ai/test-generator', label: 'Test Generator' },
-    { to: '/admin/ai/academic-analyzer', label: 'Academic Analyzer' },
+    ...(isHOD ? [{ to: `${basePath}/ai/faculty-allocation`, label: 'Faculty Allocation' }] : []),
+    { to: `${basePath}/ai/assignment-generator`, label: 'Assignment Generator' },
+    { to: `${basePath}/ai/test-generator`, label: 'Test Generator' },
+    ...(isHOD ? [{ to: `${basePath}/ai/academic-analyzer`, label: 'Academic Analyzer' }] : []),
   ]
 
   const bottomLinks = [
-    { to: '/admin/announcements', label: 'Announcements', icon: '📢' },
-    { to: '/admin/feedback', label: 'Feedback', icon: '💬' },
-    { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
+    { to: `${basePath}/announcements`, label: 'Announcements', icon: '📢' },
+    { to: `${basePath}/feedback`, label: 'Feedback', icon: '💬' },
+    ...(isAdmin ? [{ to: `${basePath}/settings`, label: 'Settings', icon: '⚙️' }] : []),
   ]
 
   return (
@@ -115,7 +119,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
           <div>
             <div className="flex items-center justify-between">
               <NavLink
-                to="/admin/ai"
+                to={`${basePath}/ai`}
                 end
                 onClick={onClose}
                 className={({ isActive }) =>

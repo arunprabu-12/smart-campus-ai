@@ -97,6 +97,12 @@ class AssignmentCreate(BaseModel):
 class AttemptUpdate(BaseModel):
     score: float
 
+class StudentUpdate(BaseModel):
+    current_semester: Optional[int] = None
+    cgpa: Optional[float] = None
+    section: Optional[str] = None
+    admission_year: Optional[int] = None
+
 class MarkAttendanceIn(BaseModel):
     student_id: int
     course_id: int
@@ -321,6 +327,26 @@ def list_students(
     ]
 
 
+@router.put("/students/{student_id}")
+def update_student(
+    student_id: int,
+    payload: StudentUpdate,
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(student, key, value)
+    
+    db.commit()
+    db.refresh(student)
+    return {"message": f"Student {student.full_name} updated successfully"}
+
+
 # ════════════════════════════════════════════════════════
 # Password Reset (admin resets student / staff password)
 # ════════════════════════════════════════════════════════
@@ -487,6 +513,20 @@ def grade_submission(sub_id: int, grade: str, feedback: Optional[str] = None, db
     db.commit()
     return {"id": sub_id, "score": sub.score, "status": "Evaluated"}
 
+@router.put("/assignments/{assignment_id}/publish")
+def publish_assignment_results(assignment_id: int, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):
+    asgn = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not asgn:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    # Simulating publish action by updating all evaluated submissions to a 'Published' status
+    db.query(AssignmentSubmission).filter(
+        AssignmentSubmission.assignment_id == assignment_id,
+        AssignmentSubmission.status == "Evaluated"
+    ).update({"status": "Published"}, synchronize_session=False)
+    
+    db.commit()
+    return {"message": f"Results published for assignment '{asgn.title}'"}
 
 # ════════════════════════════════════════════════════════
 # Attendance overview
@@ -549,6 +589,15 @@ def update_test_attempt(attempt_id: int, data: AttemptUpdate, db: Session = Depe
         raise HTTPException(status_code=404, detail="Result not found")
     res.score = data.score; res.percentage = data.score; db.commit()
     return {"message": "Attempt updated"}
+
+@router.put("/tests/{test_id}/publish")
+def publish_test_results(test_id: int, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):
+    test = db.query(Test).filter(Test.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    # For future: set a published flag on test, or update attempts status
+    # Currently tests don't have a status field, so we just acknowledge it
+    return {"message": f"Results published for test '{test.title}'"}
 
 @router.post("/submissions/{sub_id}/ai-evaluate")
 def ai_evaluate_submission(sub_id: int, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):

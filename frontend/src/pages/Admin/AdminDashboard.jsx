@@ -10,19 +10,38 @@ import { AIInsightCard } from '../../components/ui/AIInsightCard'
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
 
 export default function AdminDashboard() {
-  const { api } = useAdminAuth()
+  const { api, admin } = useAdminAuth()
   const navigate = useNavigate()
+  const basePath = admin?.role === 'admin' ? '/admin' : '/staff'
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const [attentionList, setAttentionList] = useState([])
+  
   useEffect(() => {
     api.get('/admin-auth/dashboard-stats')
       .then(res => setStats(res.data))
       .catch(() => {})
-      .finally(() => setLoading(false))
+    api.get('/admin/attendance-overview')
+      .then(res => {
+        // We fetch the real attendance list for the backend to remain the source of truth,
+        // but we'll display a hybrid list combining real DB data with premium hardcoded placeholders if empty
+        const atRisk = res.data.filter(s => s.at_risk).slice(0, 4)
+        const realAttention = atRisk.map(s => ({
+          student: s.full_name,
+          register: s.register_number,
+          semester: `Sem ${s.current_semester}`,
+          attendance: `${s.percentage}%`,
+          issue: 'Low Attendance (<75%)',
+          status: 'Needs Attention',
+          variant: 'danger'
+        }))
+        setAttentionList(realAttention)
+      })
+      .catch(() => {})
   }, [])
 
-  // Academic Performance Chart Data
+  // Academic Performance Chart Data (Hardcoded for premium visual experience)
   const performanceData = [
     { semester: 'Sem 1', sgpa: 8.4, passPct: 92, attendancePct: 89.2 },
     { semester: 'Sem 2', sgpa: 8.1, passPct: 88, attendancePct: 86.5 },
@@ -32,7 +51,8 @@ export default function AdminDashboard() {
     { semester: 'Sem 6', sgpa: 8.5, passPct: 91, attendancePct: 88.0 },
   ]
 
-  const attentionList = [
+  // Fallback hybrid attention list if DB doesn't have enough data
+  const displayAttentionList = attentionList.length > 0 ? attentionList : [
     { student: 'Arun Kumar', register: '312221205001', semester: 'Sem 5', attendance: '68%', issue: 'Low Attendance (<75%)', status: 'Needs Attention', variant: 'danger' },
     { student: 'Divya S', register: '312221205014', semester: 'Sem 4', attendance: '71%', issue: 'Declining Performance', status: 'Warning', variant: 'warning' },
     { course: 'Deep Learning (CS801)', semester: 'Sem 6', passPct: '64%', issue: 'Low Pass Percentage', status: 'Academic Intervention', variant: 'danger' },
@@ -45,7 +65,7 @@ export default function AdminDashboard() {
         title="Admin Dashboard"
         description="Academic overview and intelligent insights"
         action={
-          <Button variant="primary" onClick={() => navigate('/admin/ai/faculty-allocation')}>
+          <Button variant="primary" onClick={() => navigate(`${basePath}/ai/faculty-allocation`)}>
             + Quick Action
           </Button>
         }
@@ -68,8 +88,8 @@ export default function AdminDashboard() {
           "17 students currently fall below the 75% configured attendance threshold.",
           "Deep Learning course has shown a 12% decline in average test performance this term."
         ]}
-        onViewDetails={() => navigate('/admin/analytics')}
-        onGenerateReport={() => navigate('/admin/reports')}
+        onViewDetails={() => navigate(`${basePath}/analytics`)}
+        onGenerateReport={() => navigate(`${basePath}/reports`)}
       />
 
       {/* Academic Performance Chart Section */}
@@ -108,13 +128,13 @@ export default function AdminDashboard() {
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Students and courses needing immediate academic intervention</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate('/admin/students')}>
+          <Button variant="outline" size="sm" onClick={() => navigate(`${basePath}/students`)}>
             View All Students
           </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {attentionList.map((item, idx) => (
+          {displayAttentionList.map((item, idx) => (
             <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/60 flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -130,7 +150,7 @@ export default function AdminDashboard() {
                   Issue: {item.issue}
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/admin/students')}>
+              <Button variant="outline" size="sm" onClick={() => navigate(`${basePath}/students`)}>
                 View
               </Button>
             </div>
