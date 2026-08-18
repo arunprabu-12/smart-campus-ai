@@ -4,43 +4,39 @@ import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
+import { useAdminAuth } from '../../context/AdminAuthContext'
 
 export default function FeedbackAdmin() {
   const [feedbacks, setFeedbacks] = useState([])
   const [replyTextMap, setReplyTextMap] = useState({})
   const [filterTo, setFilterTo] = useState('')
 
+  const { api } = useAdminAuth()
+
   useEffect(() => {
     loadFeedbacks()
-    window.addEventListener('storage', loadFeedbacks)
-    return () => window.removeEventListener('storage', loadFeedbacks)
   }, [])
 
-  const loadFeedbacks = () => {
-    const stored = JSON.parse(localStorage.getItem('admin_feedbacks') || '[]')
-    if (stored.length === 0) {
-      const initial = [
-        { id: 1, studentName: 'Arun Kumar', to: 'HOD', text: 'Requesting permission to access the Advanced AI GPU lab after 5:00 PM for project training.', date: '2026-08-18T10:00:00Z', reply: 'Approved. Lab supervisor informed.' },
-        { id: 2, studentName: 'Divya S', to: 'Admin', text: 'Course registration portal showed temporary timeout during Semester 5 elective selection.', date: '2026-08-17T14:30:00Z', reply: '' },
-      ]
-      setFeedbacks(initial)
-      localStorage.setItem('admin_feedbacks', JSON.stringify(initial))
-    } else {
-      setFeedbacks(stored)
-    }
+  const loadFeedbacks = async () => {
+    try {
+      const res = await api.get('/admin/feedbacks')
+      setFeedbacks(res.data)
+    } catch (e) { console.error(e) }
   }
 
-  const handleSendReply = (idx) => {
+  const handleSendReply = async (idx) => {
+    const fb = feedbacks[idx]
     const reply = replyTextMap[idx]
     if (!reply || !reply.trim()) return
 
-    const updated = [...feedbacks]
-    updated[idx].reply = reply
-    setFeedbacks(updated)
-    localStorage.setItem('admin_feedbacks', JSON.stringify(updated))
-    window.dispatchEvent(new Event('storage'))
-    setReplyTextMap(prev => ({ ...prev, [idx]: '' }))
-    alert('Official reply sent to student successfully!')
+    try {
+      await api.put(`/admin/feedbacks/${fb.id}/reply`, { reply })
+      alert('Official reply sent to student successfully!')
+      setReplyTextMap(prev => ({ ...prev, [idx]: '' }))
+      loadFeedbacks()
+    } catch (e) {
+      alert('Failed to send reply')
+    }
   }
 
   const filtered = feedbacks.filter(f => !filterTo || f.to === filterTo)

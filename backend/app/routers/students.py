@@ -242,3 +242,18 @@ def update_cgpa(
         db.commit()
         
     return {"status": "success", "new_cgpa": current.cgpa}
+
+@router.post("/me/feedbacks")
+def submit_feedback(payload: dict, db: Session = Depends(get_db), current: Student = Depends(get_current_student)):
+    from app.models.feedback import Feedback
+    fb = Feedback(student_id=current.id, recipient=payload.get("to", "Admin"), message=payload.get("message"))
+    db.add(fb)
+    db.commit()
+    return {"message": "Submitted"}
+
+@router.get("/me/feedbacks")
+def get_my_feedbacks(db: Session = Depends(get_db), current: Student = Depends(get_current_student)):
+    from app.models.feedback import Feedback
+    feedbacks = db.query(Feedback).filter(Feedback.student_id == current.id).order_by(Feedback.created_at.desc()).all()
+    return [{"id": f.id, "to": f.recipient, "text": f.message, "reply": f.reply, "date": f.created_at.isoformat()} for f in feedbacks]
+

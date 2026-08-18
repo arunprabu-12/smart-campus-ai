@@ -141,6 +141,19 @@ def create_staff(
     return {"id": staff.id, "email": staff.email, "role": staff.role}
 
 
+@router.post("/save-staff-assignments")
+def save_staff_assignments(
+    payload: dict,
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(require_admin)
+):
+    """
+    Mock endpoint to successfully accept AI generated staff workload assignments.
+    Future: Save to a StaffAssignment table.
+    """
+    return {"message": f"Successfully assigned workloads for {len(payload.get('assignments', []))} staff."}
+
+
 @router.put("/staff/{staff_id}")
 def update_staff(
     staff_id: int,

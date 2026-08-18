@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.student import Student
+from app.models.semester import Semester
 from app.schemas.student import StudentRegister, StudentLogin, Token
 from app.auth.security import hash_password, verify_password, create_access_token
 
@@ -40,6 +41,31 @@ def register(payload: StudentRegister, db: Session = Depends(get_db)):
     db.add(student)
     db.commit()
     db.refresh(student)
+
+    if payload.previous_gpas and payload.current_semester > 1:
+        semesters = db.query(Semester).filter(Semester.regulation_id == payload.regulation_id).order_by(Semester.number).all()
+        sem_map = {s.number: s.id for s in semesters}
+        
+        from app.models.semester_completion import SemesterCompletion
+        from datetime import datetime
+        
+        valid_gpas = []
+        for sem_num_str, gpa in payload.previous_gpas.items():
+            sem_num = int(sem_num_str)
+            if sem_num < payload.current_semester and sem_num in sem_map:
+                valid_gpas.append(gpa)
+                completion = SemesterCompletion(
+                    student_id=student.id,
+                    semester_id=sem_map[sem_num],
+                    is_completed=True,
+                    sgpa=gpa,
+                    completed_at=datetime.utcnow()
+                )
+                db.add(completion)
+        
+        if valid_gpas:
+            student.cgpa = sum(valid_gpas) / len(valid_gpas)
+            db.commit()
 
     token = create_access_token(subject=student.college_email)
     return Token(access_token=token)

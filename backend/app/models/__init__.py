@@ -18,3 +18,4 @@ from app.models.semester_completion import SemesterCompletion
 from app.models.agent_log import AgentLog
 from app.models.attendance import Attendance
 from app.models.admin_user import AdminUser
+from app.models.feedback import Feedback

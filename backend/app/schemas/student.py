@@ -14,7 +14,7 @@ class StudentRegister(BaseModel):
     current_semester: int = 1
     section: Optional[str] = None
     career_interest: Optional[str] = None
-
+    previous_gpas: Optional[dict[int, float]] = None
 
 class StudentLogin(BaseModel):
     college_email: EmailStr

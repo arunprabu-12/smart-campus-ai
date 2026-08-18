@@ -21,6 +21,7 @@ from app.models.document import Document
 from app.models.resource import Resource
 from app.models.assignment import Assignment, AssignmentSubmission
 from app.models.attendance import Attendance
+from app.models.feedback import Feedback
 from app.auth.admin_dependencies import get_current_admin, require_admin
 from app.models.admin_user import AdminUser
 from app.auth.security import hash_password
@@ -550,6 +551,26 @@ def attendance_overview(db: Session = Depends(get_db), admin: AdminUser = Depend
         pct = round((present / total * 100), 1) if total else 0
         result.append({"student_id": s.id, "full_name": s.full_name, "register_number": s.register_number, "department_name": depts.get(s.department_id, "—"), "current_semester": s.current_semester, "total": total, "present": present, "absent": total - present, "percentage": pct, "at_risk": pct < 75 and total > 0})
     return result
+
+
+# ════════════════════════════════════════════════════════
+# Feedback management
+# ════════════════════════════════════════════════════════
+
+@router.get("/feedbacks")
+def get_all_feedbacks(db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):
+    feedbacks = db.query(Feedback).join(Student).order_by(Feedback.created_at.desc()).all()
+    return [{"id": f.id, "studentName": f.student.full_name, "to": f.recipient, "text": f.message, "reply": f.reply, "date": f.created_at.isoformat()} for f in feedbacks]
+
+@router.put("/feedbacks/{feedback_id}/reply")
+def reply_feedback(feedback_id: int, payload: dict, db: Session = Depends(get_db), admin: AdminUser = Depends(get_current_admin)):
+    fb = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+    if not fb:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    fb.reply = payload.get("reply")
+    fb.replied_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Replied"}
 
 
 # ════════════════════════════════════════════════════════

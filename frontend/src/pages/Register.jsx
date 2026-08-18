@@ -12,6 +12,7 @@ export default function Register() {
     department_id: '', regulation_id: '', admission_year: new Date().getFullYear(),
     current_semester: 1, section: '', career_interest: '',
   })
+  const [previousGpas, setPreviousGpas] = useState({})
   const [departments, setDepartments] = useState([])
   const [regulations, setRegulations] = useState([])
   const [error, setError] = useState('')
@@ -42,6 +43,9 @@ export default function Register() {
         regulation_id: parseInt(form.regulation_id, 10),
         admission_year: parseInt(form.admission_year, 10),
         current_semester: parseInt(form.current_semester, 10),
+      }
+      if (payload.current_semester > 1 && Object.keys(previousGpas).length > 0) {
+        payload.previous_gpas = previousGpas
       }
       await register(payload)
       navigate('/')
@@ -153,6 +157,31 @@ export default function Register() {
                 <input id="reg-career" name="career_interest" className={inputCls} placeholder="e.g. Machine Learning Engineer" value={form.career_interest} onChange={handleChange} />
               </div>
             </div>
+
+            {parseInt(form.current_semester) > 1 && (
+              <div className="space-y-3 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                <h3 className="text-sm font-bold text-slate-800">Previous Semester GPAs</h3>
+                <p className="text-xs text-slate-500">Please enter your SGPA for completed semesters to accurately calculate your CGPA.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {Array.from({ length: parseInt(form.current_semester) - 1 }, (_, i) => i + 1).map(sem => (
+                    <div key={sem}>
+                      <label className={labelCls}>Semester {sem} SGPA</label>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        max="10" 
+                        required 
+                        className={inputCls} 
+                        placeholder="e.g. 8.5"
+                        value={previousGpas[sem] || ''} 
+                        onChange={e => setPreviousGpas(prev => ({ ...prev, [sem]: parseFloat(e.target.value) || 0 }))} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-xs text-red-700">

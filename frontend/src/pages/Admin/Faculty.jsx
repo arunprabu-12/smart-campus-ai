@@ -13,6 +13,7 @@ export default function Faculty() {
   const [resetMsg, setResetMsg] = useState('')
   const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'staff', department: '' })
   const [addMsg, setAddMsg] = useState('')
+  const [editingStaff, setEditingStaff] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -25,17 +26,34 @@ export default function Faculty() {
 
   useEffect(() => { load() }, [])
 
-  const handleAdd = async (e) => {
+  const handleAddOrEdit = async (e) => {
     e.preventDefault()
     setAddMsg('')
     try {
-      await api.post('/admin-auth/staff', form)
-      setAddMsg('Staff member added successfully!')
+      if (editingStaff) {
+        // Edit mode (exclude password if empty)
+        const payload = { full_name: form.full_name, email: form.email, role: form.role, department: form.department }
+        await api.put(`/admin-auth/staff/${editingStaff.id}`, payload)
+        setAddMsg('Staff member updated successfully!')
+      } else {
+        // Add mode
+        await api.post('/admin-auth/staff', form)
+        setAddMsg('Staff member added successfully!')
+      }
       setForm({ full_name: '', email: '', password: '', role: 'staff', department: '' })
+      setEditingStaff(null)
+      setShowAdd(false)
       load()
     } catch (e) {
       setAddMsg('Error: ' + (e.response?.data?.detail || e.message))
     }
+  }
+
+  const openEdit = (s) => {
+    setEditingStaff(s)
+    setForm({ full_name: s.full_name, email: s.email, password: '', role: s.role.toLowerCase(), department: s.department || '' })
+    setShowAdd(true)
+    setAddMsg('')
   }
 
   const handleToggle = async (s) => {
@@ -74,17 +92,16 @@ export default function Faculty() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <PageHeader title="Faculty & Staff Management" description={`${staff.length} staff members`} />
-        <button onClick={() => setShowAdd(!showAdd)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold">
+        <button onClick={() => { setEditingStaff(null); setForm({ full_name: '', email: '', password: '', role: 'staff', department: '' }); setShowAdd(!showAdd); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold">
           + Add Staff
         </button>
       </div>
 
-      {/* Add Staff Form */}
       {showAdd && (
         <Card p="p-5">
-          <h3 className="font-bold text-slate-900 text-sm mb-4">Add New Staff / Faculty</h3>
-          <form onSubmit={handleAdd} className="grid grid-cols-2 gap-3">
-            {[['Full Name *', 'full_name', 'text', 'Dr. Kapil Sharma'], ['Email *', 'email', 'email', 'kapil@college.edu'], ['Password *', 'password', 'password', 'Min 6 chars'], ['Department', 'department', 'text', 'AIDS']].map(([label, name, type, ph]) => (
+          <h3 className="font-bold text-slate-900 text-sm mb-4">{editingStaff ? 'Edit Staff / Faculty' : 'Add New Staff / Faculty'}</h3>
+          <form onSubmit={handleAddOrEdit} className="grid grid-cols-2 gap-3">
+            {[['Full Name *', 'full_name', 'text', 'Dr. Kapil Sharma'], ['Email *', 'email', 'email', 'kapil@college.edu'], [editingStaff ? 'Password (leave blank to keep)' : 'Password *', 'password', 'password', 'Min 6 chars'], ['Department', 'department', 'text', 'AIDS']].map(([label, name, type, ph]) => (
               <div key={name}>
                 <label className="text-xs font-semibold text-slate-500 block mb-1">{label}</label>
                 <input type={type} required={label.includes('*')} placeholder={ph} value={form[name]} onChange={e => setForm({ ...form, [name]: e.target.value })}
@@ -104,8 +121,8 @@ export default function Faculty() {
             </div>
             {addMsg && <div className={`col-span-2 text-xs px-3 py-2 rounded-lg ${addMsg.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>{addMsg}</div>}
             <div className="col-span-2 flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold">Add Staff</button>
-              <button type="button" onClick={() => setShowAdd(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold">{editingStaff ? 'Update Staff' : 'Add Staff'}</button>
+              <button type="button" onClick={() => { setShowAdd(false); setEditingStaff(null); }} className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
             </div>
           </form>
         </Card>
@@ -142,7 +159,8 @@ export default function Faculty() {
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 flex-wrap">
+                      <button onClick={() => openEdit(s)} className="px-2 py-1 text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100">✏️ Edit</button>
                       <button onClick={() => setResetModal({ id: s.id, name: s.full_name })} className="px-2 py-1 text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-100">🔑 Pwd</button>
                       <button onClick={() => handleDelete(s)} className="px-2 py-1 text-xs font-semibold bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100">Delete</button>
                     </div>

@@ -17,6 +17,10 @@ export default function Students() {
   const [newPassword, setNewPassword] = useState('')
   const [resetMsg, setResetMsg] = useState('')
 
+  const [editModal, setEditModal] = useState(null) // student object
+  const [editForm, setEditForm] = useState({ current_semester: 1, cgpa: 0, section: '', admission_year: 2023 })
+  const [editMsg, setEditMsg] = useState('')
+
   const load = async () => {
     setLoading(true)
     try {
@@ -53,6 +57,33 @@ export default function Students() {
       setTimeout(() => { setResetModal(null); setResetMsg('') }, 1500)
     } catch (e) {
       setResetMsg('Failed: ' + (e.response?.data?.detail || e.message))
+    }
+  }
+
+  const openEdit = (s) => {
+    setEditModal(s)
+    setEditForm({
+      current_semester: s.current_semester,
+      cgpa: s.cgpa || 0,
+      section: s.section || '',
+      admission_year: s.admission_year || 2023
+    })
+    setEditMsg('')
+  }
+
+  const handleEditStudent = async (e) => {
+    e.preventDefault()
+    try {
+      await api.put(`/admin/students/${editModal.id}`, {
+        current_semester: parseInt(editForm.current_semester),
+        cgpa: parseFloat(editForm.cgpa),
+        section: editForm.section,
+        admission_year: parseInt(editForm.admission_year)
+      })
+      setEditMsg(`Updated ${editModal.full_name} successfully!`)
+      setTimeout(() => { setEditModal(null); setEditMsg(''); load(); }, 1500)
+    } catch (e) {
+      setEditMsg('Failed: ' + (e.response?.data?.detail || e.message))
     }
   }
 
@@ -131,12 +162,20 @@ export default function Students() {
                   </td>
                   <td className="px-4 py-3 font-bold text-blue-600">{s.cgpa?.toFixed(2) || '—'}</td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => setResetModal({ id: s.id, name: s.full_name })}
-                      className="px-2.5 py-1 text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-100 transition"
-                    >
-                      🔑 Reset Pwd
-                    </button>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => openEdit(s)}
+                        className="px-2.5 py-1 text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => setResetModal({ id: s.id, name: s.full_name })}
+                        className="px-2.5 py-1 text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-100 transition"
+                      >
+                        🔑 Pwd
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -167,6 +206,47 @@ export default function Students() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Student Modal */}
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 w-full max-w-sm mx-4">
+            <h3 className="font-bold text-slate-900 text-base mb-1">Edit Student Details</h3>
+            <p className="text-sm text-slate-500 mb-4">Editing <strong>{editModal.full_name}</strong></p>
+            <form onSubmit={handleEditStudent} className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1">Semester</label>
+                <select value={editForm.current_semester} onChange={e => setEditForm({ ...editForm, current_semester: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                  {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1">CGPA</label>
+                <input type="number" step="0.01" value={editForm.cgpa} onChange={e => setEditForm({ ...editForm, cgpa: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1">Section</label>
+                <input type="text" value={editForm.section} onChange={e => setEditForm({ ...editForm, section: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. A" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 block mb-1">Admission Year</label>
+                <input type="number" value={editForm.admission_year} onChange={e => setEditForm({ ...editForm, admission_year: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              
+              {editMsg && <p className={`text-xs mt-2 ${editMsg.startsWith('Failed') ? 'text-red-600' : 'text-emerald-600'}`}>{editMsg}</p>}
+              
+              <div className="flex gap-2 mt-4">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-bold">
+                  Save Changes
+                </button>
+                <button type="button" onClick={() => { setEditModal(null); setEditMsg('') }} className="flex-1 border border-slate-300 rounded-lg py-2.5 text-sm text-slate-600 hover:bg-slate-50">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

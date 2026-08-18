@@ -20,9 +20,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [sgpaInputs, setSgpaInputs] = useState({})
   const [isUpdating, setIsUpdating] = useState(false)
-  const [notifications, setNotifications] = useState(() => {
-    return JSON.parse(localStorage.getItem('student_notifications') || '[]')
-  })
+  const [myFeedbacks, setMyFeedbacks] = useState([])
 
   useEffect(() => {
     Promise.all([getProfile(), getDashboard()])
@@ -41,14 +39,15 @@ export default function Profile() {
       .catch(() => {})
       .finally(() => setLoading(false))
       
-    const handleStorage = () => setNotifications(JSON.parse(localStorage.getItem('student_notifications') || '[]'))
-    window.addEventListener('storage', handleStorage)
-    window.addEventListener('new_notification', handleStorage)
-    return () => {
-      window.removeEventListener('storage', handleStorage)
-      window.removeEventListener('new_notification', handleStorage)
-    }
+    loadMyFeedbacks()
   }, [])
+
+  const loadMyFeedbacks = async () => {
+    try {
+      const res = await api.get('/students/me/feedbacks')
+      setMyFeedbacks(res.data)
+    } catch (e) {}
+  }
 
   const handleLogout = () => {
     logout()
@@ -181,18 +180,20 @@ export default function Profile() {
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
           Submit formal feedback to your department Head (HOD), Staff, or Admin.
         </p>
-        <form onSubmit={(e) => {
+        <form onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const msg = fd.get('feedback');
+          const msg = fd.get('message');
           const to = fd.get('to');
           if (!msg.trim()) return;
-          const stored = JSON.parse(localStorage.getItem('admin_feedbacks') || '[]');
-          stored.push({ text: msg, to, date: new Date().toISOString(), studentName: profile?.full_name || 'Student' });
-          localStorage.setItem('admin_feedbacks', JSON.stringify(stored));
-          window.dispatchEvent(new Event('storage')); 
-          alert('Official feedback submitted successfully!');
-          e.target.reset();
+          try {
+            await api.post('/students/me/feedbacks', { to, message: msg });
+            alert('Official feedback submitted successfully!');
+            e.target.reset();
+            loadMyFeedbacks();
+          } catch (err) {
+            alert('Failed to submit feedback');
+          }
         }} className="space-y-3">
           <Select name="to" required>
             <option value="Admin">Admin</option>
@@ -200,7 +201,7 @@ export default function Profile() {
             <option value="Department Staff">Department Staff</option>
           </Select>
           <textarea 
-            name="feedback"
+            name="message"
             rows="3"
             placeholder="Describe your issue, request, or suggestion..."
             className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -214,10 +215,10 @@ export default function Profile() {
         {/* Sent Feedbacks & Replies */}
         <div className="mt-6 space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
           <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">My Feedback History</h4>
-          {(() => {
-            const myFb = JSON.parse(localStorage.getItem('admin_feedbacks') || '[]').filter(f => f.studentName === (profile?.full_name || 'Student')).reverse();
-            if (myFb.length === 0) return <p className="text-xs text-slate-500">No feedback submitted yet.</p>
-            return myFb.map((f, i) => (
+          {myFeedbacks.length === 0 ? (
+            <p className="text-xs text-slate-500">No feedback submitted yet.</p>
+          ) : (
+            myFeedbacks.map((f, i) => (
               <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">To: {f.to || 'Admin'}</span>
@@ -231,7 +232,7 @@ export default function Profile() {
                 )}
               </div>
             ))
-          })()}
+          )}
         </div>
       </Card>
 
