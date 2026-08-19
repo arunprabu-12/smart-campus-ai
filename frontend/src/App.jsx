@@ -114,6 +114,7 @@ export default function App() {
         <Route path="feedback" element={<FeedbackAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="profile" element={<StaffProfile />} />
+        <Route path="calendar" element={<CalendarPage />} />
       </Route>
 
       {/* Staff protected layout & sub-routes */}
@@ -136,6 +137,7 @@ export default function App() {
         <Route path="feedback" element={<FeedbackAdmin />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="profile" element={<StaffProfile />} />
+        <Route path="calendar" element={<CalendarPage />} />
       </Route>
 
       {/* Backwards compatibility for /admin-panel */}

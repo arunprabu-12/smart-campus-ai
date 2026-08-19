@@ -16,8 +16,7 @@ def get_current_admin(
 ) -> AdminUser:
     payload = decode_access_token(token)
     email = payload.get("sub")
-    role = payload.get("role", "")
-    if not email or role not in ("admin", "staff"):
+    if not email:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not an admin/staff account")
     admin = db.query(AdminUser).filter(AdminUser.email == email, AdminUser.is_active == True).first()
     if not admin:

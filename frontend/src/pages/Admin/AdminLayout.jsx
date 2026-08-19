@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import AdminSidebar from '../../components/AdminSidebar'
 import { useAdminAuth } from '../../context/AdminAuthContext'
@@ -10,6 +10,15 @@ export default function AdminLayout({ children }) {
   const { admin } = useAdminAuth()
   const { dark, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const [latency, setLatency] = useState(null)
+
+  useEffect(() => {
+    const handleLatency = (e) => {
+      setLatency(e.detail)
+    }
+    window.addEventListener('api_latency', handleLatency)
+    return () => window.removeEventListener('api_latency', handleLatency)
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -34,6 +43,24 @@ export default function AdminLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
+            {latency !== null && (
+              <div 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wider ${
+                  latency < 150 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                    : latency < 350 
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400' 
+                      : 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
+                }`}
+                title="Latest API response time"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  latency < 150 ? 'bg-emerald-500' : latency < 350 ? 'bg-amber-500' : 'bg-red-500'
+                }`} />
+                API: {latency}ms
+              </div>
+            )}
+
             <button
               onClick={toggleTheme}
               className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"

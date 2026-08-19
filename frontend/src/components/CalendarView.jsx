@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function CalendarView({ events = [] }) {
+export default function CalendarView({ events = [], storageKey = 'student_events' }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -29,9 +29,9 @@ export default function CalendarView({ events = [] }) {
   const handleAddEvent = (e) => {
     e.preventDefault();
     if (newEventTitle.trim() && selectedDate) {
-      const stored = JSON.parse(localStorage.getItem('student_events') || '[]');
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
       stored.push({ date: selectedDate.toISOString(), title: newEventTitle });
-      localStorage.setItem('student_events', JSON.stringify(stored));
+      localStorage.setItem(storageKey, JSON.stringify(stored));
       window.dispatchEvent(new Event('new_event'));
       setNewEventTitle('');
       setShowModal(false);

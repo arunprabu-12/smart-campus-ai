@@ -40,32 +40,50 @@ export default function Courses() {
   const fetchCourses = async () => {
     setLoading(true)
     try {
-      const res = await api.get('/admin-auth/courses')
-      setCourses(res.data || [])
+      const res = await api.get('/admin/courses')
+      setCourses(res.data.map(c => ({
+        ...c,
+        code: c.course_code,
+        name: c.course_name,
+        semester: c.semester_id,
+        department: 'AIDS',
+        faculty: 'Kapil Dev',
+        units: 5
+      })))
     } catch {
-      setCourses([
-        { id: 1, code: 'AI3501', name: 'Deep Learning Architectures', semester: 5, department: 'AIDS', credits: 4, faculty: 'Kapil Dev', units: 5, topicsCount: 25, studentsCount: 64 },
-        { id: 2, code: 'AI3502', name: 'Generative AI & LLMs', semester: 5, department: 'AIDS', credits: 3, faculty: 'Jayasree M', units: 5, topicsCount: 22, studentsCount: 64 },
-        { id: 3, code: 'AI3503', name: 'Agentic AI Frameworks', semester: 5, department: 'AIDS', credits: 4, faculty: 'Madhubala K', units: 5, topicsCount: 20, studentsCount: 64 },
-        { id: 4, code: 'AI3504', name: 'Manufacturing AI Systems', semester: 5, department: 'AIDS', credits: 3, faculty: 'Selvarani R', units: 5, topicsCount: 18, studentsCount: 64 },
-        { id: 5, code: 'AI3505', name: 'Cloud & Vector Databases', semester: 5, department: 'AIDS', credits: 3, faculty: 'Divya S', units: 5, topicsCount: 19, studentsCount: 64 },
-      ])
+      setCourses([])
     }
     setLoading(false)
   }
 
-  const handleSaveCourse = (e) => {
+  const handleSaveCourse = async (e) => {
     e.preventDefault()
-    const newC = { id: Date.now(), ...formData, topicsCount: 20, studentsCount: 64 }
-    setCourses(prev => [newC, ...prev])
-    setShowAddModal(false)
-    alert('New course created successfully!')
+    try {
+      const payload = {
+        course_code: formData.code,
+        course_name: formData.name,
+        credits: formData.credits,
+        semester_id: formData.semester
+      }
+      await api.post('/admin/courses', payload)
+      setShowAddModal(false)
+      alert('New course created successfully!')
+      fetchCourses()
+    } catch (err) {
+      alert('Error creating course: ' + (err.response?.data?.detail || err.message))
+    }
   }
 
-  const handleDeleteCourse = () => {
+  const handleDeleteCourse = async () => {
     if (!courseToDelete) return
-    setCourses(prev => prev.filter(c => c.id !== courseToDelete.id))
-    setCourseToDelete(null)
+    try {
+      await api.delete(`/admin/courses/${courseToDelete.id}`)
+      setCourseToDelete(null)
+      setShowDeleteConfirm(false)
+      fetchCourses()
+    } catch (err) {
+      alert('Error deleting course: ' + (err.response?.data?.detail || err.message))
+    }
   }
 
   const { admin } = useAdminAuth()
@@ -81,14 +99,16 @@ export default function Courses() {
       
       const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
       
-      const matchesFaculty = c.faculty?.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(c.faculty?.toLowerCase());
+      const courseName = c.course_name || '';
+      const courseCode = c.course_code || '';
+
       const matchesAssigned = assignedCourses.some(assigned => 
-        c.name.toLowerCase().includes(assigned) || 
-        assigned.includes(c.name.toLowerCase()) ||
-        c.code.toLowerCase().includes(assigned)
+        courseName.toLowerCase().includes(assigned) || 
+        assigned.includes(courseName.toLowerCase()) ||
+        courseCode.toLowerCase().includes(assigned)
       );
       
-      if (!matchesFaculty && !matchesAssigned) return false;
+      if (!matchesAssigned) return false;
     }
     
     return true

@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { AIInsightCard } from '../../components/ui/AIInsightCard'
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
+import CalendarView from '../../components/CalendarView'
 
 export default function AdminDashboard() {
   const { api, admin } = useAdminAuth()
@@ -17,6 +18,22 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   const [chartData, setChartData] = useState([])
+  const [attentionList, setAttentionList] = useState([])
+  const [calendarEvents, setCalendarEvents] = useState([])
+
+  useEffect(() => {
+    function loadEvents() {
+      const stored = JSON.parse(localStorage.getItem('student_events') || '[]')
+      setCalendarEvents(stored)
+    }
+    loadEvents()
+    window.addEventListener('storage', loadEvents)
+    window.addEventListener('new_event', loadEvents)
+    return () => {
+      window.removeEventListener('storage', loadEvents)
+      window.removeEventListener('new_event', loadEvents)
+    }
+  }, [])
   
   useEffect(() => {
     api.get('/admin-auth/dashboard-stats')
@@ -35,13 +52,15 @@ export default function AdminDashboard() {
         const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
         
         fetchedCourses = fetchedCourses.filter(c => {
-          const matchesFaculty = c.faculty?.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(c.faculty?.toLowerCase())
+          const courseName = c.course_name || ''
+          const courseCode = c.course_code || ''
+          
           const matchesAssigned = assignedCourses.some(assigned => 
-            c.name.toLowerCase().includes(assigned) || 
-            assigned.includes(c.name.toLowerCase()) ||
-            c.code.toLowerCase().includes(assigned)
+            courseName.toLowerCase().includes(assigned) || 
+            assigned.includes(courseName.toLowerCase()) ||
+            courseCode.toLowerCase().includes(assigned)
           )
-          return matchesFaculty || matchesAssigned
+          return matchesAssigned
         })
       }
 
@@ -150,6 +169,17 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
           )}
         </div>
+      </Card>
+
+      {/* Calendar Section */}
+      <Card p="p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            📅 Academic Calendar
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Track upcoming assignments, tests, and announcements</p>
+        </div>
+        <CalendarView events={calendarEvents} storageKey="student_events" />
       </Card>
 
       {/* Attention Required Section */}

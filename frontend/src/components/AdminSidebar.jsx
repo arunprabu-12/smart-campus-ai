@@ -28,6 +28,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
     { to: `${basePath}/attendance`, label: 'Attendance', icon: '📊' },
     ...(isAdmin ? [{ to: `${basePath}/analytics`, label: 'Analytics', icon: '📈' }] : []),
     { to: `${basePath}/reports`, label: 'Reports', icon: '📑' },
+    { to: `${basePath}/calendar`, label: 'Calendar', icon: '📅' },
   ]
 
   const aiSubLinks = [

@@ -18,6 +18,16 @@ ADMIN_BOOTSTRAP_SECRET = os.getenv("ADMIN_SECRET_KEY", "super_secret_admin_key_2
 
 router = APIRouter(prefix="/admin-auth", tags=["admin-auth"])
 
+def get_staff_department(db: Session, admin: AdminUser):
+    from app.models.department import Department
+    dept = db.query(Department).filter(Department.name == admin.department).first()
+    if dept:
+        return dept
+    dept = db.query(Department).filter(Department.name.ilike("%Artificial%")).first()
+    if not dept:
+        dept = db.query(Department).first()
+    return dept
+
 
 # ── Schemas ──────────────────────────────────────────────────────────
 
@@ -39,6 +49,7 @@ class StaffCreate(BaseModel):
 
 class StaffUpdate(BaseModel):
     full_name: Optional[str] = None
+    email: Optional[str] = None
     role: Optional[str] = None
     department: Optional[str] = None
     is_active: Optional[bool] = None
@@ -209,7 +220,7 @@ def dashboard_stats(
     q_attendance = db.query(Attendance)
 
     if admin.role == "staff" and admin.department:
-        dept = db.query(Department).filter(Department.name == admin.department).first()
+        dept = get_staff_department(db, admin)
         if dept:
             q_students = q_students.filter(Student.department_id == dept.id)
             q_attempts = q_attempts.join(Student).filter(Student.department_id == dept.id)

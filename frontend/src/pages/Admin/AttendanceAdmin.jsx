@@ -28,13 +28,15 @@ export default function AttendanceAdmin() {
           const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
           
           fetchedCourses = fetchedCourses.filter(c => {
-            const matchesFaculty = c.faculty?.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(c.faculty?.toLowerCase())
+            const courseName = c.course_name || ''
+            const courseCode = c.course_code || ''
+            
             const matchesAssigned = assignedCourses.some(assigned => 
-              c.name.toLowerCase().includes(assigned) || 
-              assigned.includes(c.name.toLowerCase()) ||
-              c.code.toLowerCase().includes(assigned)
+              courseName.toLowerCase().includes(assigned) || 
+              assigned.includes(courseName.toLowerCase()) ||
+              courseCode.toLowerCase().includes(assigned)
             )
-            return matchesFaculty || matchesAssigned
+            return matchesAssigned
           })
         }
 

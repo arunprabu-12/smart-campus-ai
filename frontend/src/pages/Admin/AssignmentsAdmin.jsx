@@ -4,7 +4,7 @@ import { Card } from '../../components/ui/Card'
 import { useAdminAuth } from '../../context/AdminAuthContext'
 
 export default function AssignmentsAdmin({ isGeneratorMode }) {
-  const { api } = useAdminAuth()
+  const { api, admin } = useAdminAuth()
   const [assignments, setAssignments] = useState([])
   const [courses, setCourses] = useState([])
   const [submissions, setSubmissions] = useState([])
@@ -34,13 +34,15 @@ export default function AssignmentsAdmin({ isGeneratorMode }) {
         const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
         
         fetchedCourses = fetchedCourses.filter(c => {
-          const matchesFaculty = c.faculty?.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(c.faculty?.toLowerCase())
+          const courseName = c.course_name || ''
+          const courseCode = c.course_code || ''
+          
           const matchesAssigned = assignedCourses.some(assigned => 
-            c.name.toLowerCase().includes(assigned) || 
-            assigned.includes(c.name.toLowerCase()) ||
-            c.code.toLowerCase().includes(assigned)
+            courseName.toLowerCase().includes(assigned) || 
+            assigned.includes(courseName.toLowerCase()) ||
+            courseCode.toLowerCase().includes(assigned)
           )
-          return matchesFaculty || matchesAssigned
+          return matchesAssigned
         })
       }
       
@@ -219,48 +221,58 @@ export default function AssignmentsAdmin({ isGeneratorMode }) {
         </div>
       </Card>
 
-      {/* Assignments Table */}
-      <Card p="p-0" className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                {['#', 'Title', 'Course', 'Submissions', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={5} className="py-10 text-center text-slate-400 text-sm">Loading…</td></tr>
-              ) : assignments.length === 0 ? (
-                <tr><td colSpan={5} className="py-10 text-center text-slate-400 text-sm">No assignments found.</td></tr>
-              ) : assignments.map((a, i) => (
-                <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-slate-400 text-xs">{i + 1}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{a.title}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">{a.course_name}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold ${a.total_submissions > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {a.total_submissions} submitted
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => setSelected(selected?.id === a.id ? null : a)}
-                      className="px-3 py-1 text-xs font-semibold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100"
-                    >
-                      {selected?.id === a.id ? 'Hide' : 'View Submissions'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* Assignments Grouped by Course */}
+      <div className="space-y-6">
+        {loading ? (
+          <Card p="p-10"><p className="text-center text-slate-400 text-sm">Loading…</p></Card>
+        ) : assignments.length === 0 ? (
+          <Card p="p-10"><p className="text-center text-slate-400 text-sm">No assignments found.</p></Card>
+        ) : (
+          Object.entries(assignments.reduce((acc, a) => {
+            acc[a.course_name] = acc[a.course_name] || [];
+            acc[a.course_name].push(a);
+            return acc;
+          }, {})).map(([courseName, courseAssignments]) => (
+            <Card key={courseName} p="p-0" className="overflow-hidden mb-5">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h4 className="font-bold text-slate-800">{courseName}</h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['#', 'Title', 'Submissions', 'Actions'].map(h => (
+                        <th key={h} className="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {courseAssignments.map((a, i) => (
+                      <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 text-slate-400 text-xs">{i + 1}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900">{a.title}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold ${a.total_submissions > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {a.total_submissions} submitted
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => setSelected(selected?.id === a.id ? null : a)}
+                            className="px-3 py-1 text-xs font-semibold bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100"
+                          >
+                            {selected?.id === a.id ? 'Hide' : 'View Submissions'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
 
       {/* Submissions Panel */}
       {selected && (

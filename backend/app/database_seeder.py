@@ -187,8 +187,8 @@ def seed_db(db: Session):
                 db.refresh(c)
             courses[code] = c
             
-            # Auto-populate 5 units, topics, tests, assignments for CS3701, CS3702, CS3703
-            if code in ["CS3701", "CS3702", "CS3703"]:
+            # Auto-populate 5 units, topics, tests, assignments for CS3701, CS3702, CS3703 and Semester 5 courses
+            if code in ["CS3701", "CS3702", "CS3703", "CS3502", "CS3503", "CS3504", "CS3505"]:
                 seed_course_details(db, c)
 
         # 5. Seed Units & Topics for Machine Learning (CS3501)
@@ -352,17 +352,53 @@ def seed_db(db: Session):
                 rec_stud.current_semester = 7
                 db.commit()
 
-            # Additional students to match local DB
+            # Additional students to match local DB (some Semester 7, some Semester 5)
             other_students = [
                 ("Arunachalam", "231801013", "231801013@rajalakshmi.edu.in", "123456789", 7, "A"),
-                ("deepak", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 7, "A"),
+                ("deepak", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 5, "A"),
                 ("Joseph Vijay", "231801042", "231801042@rajalakshmi.edu.in", "123456789", 7, "B"),
-                ("Harihar", "231801048", "231801048@rajalakshmi.edu.in", "123456789", 7, "B"),
-                ("Jaga", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 7, "A")
+                ("Harihar", "231801048", "231801048@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("Jaga", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 5, "A"),
+                
+                # New students requested by user
+                ("ABHINAVU PRASAD", "231801002", "231801002@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("aishwarya m", "231801003", "231801003@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("ARCHANA R M", "231801011", "231801011@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("ARUN PRABU M M", "231801012", "231801012@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("ASWIN SATHEESH", "231801016", "231801016@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("BHARATH RAJ N S", "231801022", "231801022@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("DARSHINI R", "231801026", "231801026@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("DEEPAK S", "231801027", "231801027@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("DHARSHANA S", "231801032", "231801032@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("HANNAH JAMES", "231801047", "231801047@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("HARINI S", "231801049", "231801049@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("HEMANANTH S", "231801056", "231801056@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("IRAIYANBU S T", "231801061", "231801061@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("JAGADEESAN T", "231801062", "231801062@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("JANANI V R", "231801065", "231801065@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("JYOSTNA J", "231801075", "231801075@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("KEERTHNA S", "231801083", "231801083@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("KRITHIKA MA", "231801086", "231801086@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("KUMARAN D", "231801087", "231801087@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("MANISHA P", "231801096", "231801096@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("MATHAN S", "231801098", "231801098@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("MOHANRAJI PICHANDI", "231801109", "231801109@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("MUKESH KUMAR S", "231801112", "231801112@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("MURALI KRISHNA M", "231801113", "231801113@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("NIKITHA S S", "231801118", "231801118@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("NITHENKUMAR S", "231801119", "231801119@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("RAGUL G", "231801132", "231801132@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("SACHIN K G", "231801144", "231801144@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("SANJAY N", "231801149", "231801149@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("SARANYA V", "231801155", "231801155@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("SASI SRIRAM E", "231801159", "231801159@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("SOORYA G", "231801169", "231801169@rajalakshmi.edu.in", "123456789", 5, "B"),
+                ("VISHVAM GANESH", "231801189", "231801189@rajalakshmi.edu.in", "123456789", 5, "A"),
+                ("SHRI RAM M", "231801507", "231801507@rajalakshmi.edu.in", "123456789", 5, "B")
             ]
 
             for name, reg_num, email, pwd, sem, sec in other_students:
-                s_obj = db.query(Student).filter(Student.college_email == email).first()
+                s_obj = db.query(Student).filter(Student.register_number == reg_num).first()
                 if not s_obj:
                     new_s = Student(
                         full_name=name,
@@ -379,16 +415,19 @@ def seed_db(db: Session):
                     )
                     db.add(new_s)
                 else:
-                    s_obj.current_semester = 7
+                    s_obj.current_semester = sem
+                    s_obj.full_name = name
+                    s_obj.college_email = email
+                    s_obj.password_hash = hash_password(pwd)
             db.commit()
 
-            # Seed Semester Completion for semesters 1-6 to show GPA trends
+            # Seed Semester Completion up to (current_semester - 1) to show GPA trends
             import random
-            emails = ["student@rajalakshmi.edu.in", "arjun.kumar@college.edu", "231801013@rajalakshmi.edu.in", "231801027@rajalakshmi.edu.in", "231801042@rajalakshmi.edu.in", "231801048@rajalakshmi.edu.in", "231801062@rajalakshmi.edu.in"]
+            emails = ["student@rajalakshmi.edu.in", "arjun.kumar@college.edu"] + [item[2] for item in other_students]
             for email in emails:
                 stud_obj = db.query(Student).filter(Student.college_email == email).first()
                 if stud_obj:
-                    for s_num in range(1, 7):
+                    for s_num in range(1, stud_obj.current_semester):
                         sem_obj = db.query(Semester).filter(Semester.number == s_num, Semester.regulation_id == reg_2023_obj.id).first()
                         if sem_obj:
                             comp = db.query(SemesterCompletion).filter(
@@ -409,71 +448,76 @@ def seed_db(db: Session):
                                 db.add(comp)
             db.commit()
 
-            # Seed assignments & tests attempts/results for student courses
+            # Seed assignments & tests attempts/results for student courses based on current semester
             from datetime import datetime
             
             for email in emails:
                 stud_obj = db.query(Student).filter(Student.college_email == email).first()
                 if stud_obj:
-                    # Let's get courses for the student's current semester (Semester 7)
-                    courses_list = db.query(Course).filter(Course.semester_id == sem_7.id).all()
-                    for course in courses_list:
-                        # Find assignments
-                        assigns = db.query(Assignment).filter(Assignment.course_id == course.id).all()
-                        for i, assign in enumerate(assigns):
-                            # Seed submission for the first assignment
-                            if i == 0:
-                                sub = db.query(AssignmentSubmission).filter(
-                                    AssignmentSubmission.assignment_id == assign.id,
-                                    AssignmentSubmission.student_id == stud_obj.id
+                    # Get courses for the student's actual current semester
+                    student_sem = db.query(Semester).filter(
+                        Semester.regulation_id == reg_2023_obj.id,
+                        Semester.number == stud_obj.current_semester
+                    ).first()
+                    if student_sem:
+                        courses_list = db.query(Course).filter(Course.semester_id == student_sem.id).all()
+                        for course in courses_list:
+                            # Find assignments
+                            assigns = db.query(Assignment).filter(Assignment.course_id == course.id).all()
+                            for i, assign in enumerate(assigns):
+                                # Seed submission for the first assignment
+                                if i == 0:
+                                    sub = db.query(AssignmentSubmission).filter(
+                                        AssignmentSubmission.assignment_id == assign.id,
+                                        AssignmentSubmission.student_id == stud_obj.id
+                                    ).first()
+                                    if not sub:
+                                        sub = AssignmentSubmission(
+                                            assignment_id=assign.id,
+                                            student_id=stud_obj.id,
+                                            answers='{"1": "Decentralized autonomous framework.", "2": "Data scarcity."}',
+                                            status="Evaluated",
+                                            score=85,
+                                            submitted_at=datetime.utcnow()
+                                        )
+                                        db.add(sub)
+                                        
+                            # Find tests
+                            tests_list = db.query(Test).filter(Test.course_id == course.id).all()
+                            for test in tests_list:
+                                att = db.query(TestAttempt).filter(
+                                    TestAttempt.test_id == test.id,
+                                    TestAttempt.student_id == stud_obj.id
                                 ).first()
-                                if not sub:
-                                    sub = AssignmentSubmission(
-                                        assignment_id=assign.id,
+                                if not att:
+                                    att = TestAttempt(
+                                        test_id=test.id,
                                         student_id=stud_obj.id,
-                                        answers='{"1": "Decentralized autonomous framework.", "2": "Data scarcity."}',
-                                        status="Evaluated",
-                                        score=85,
-                                        submitted_at=datetime.utcnow()
+                                        attempt_number=1,
+                                        started_at=datetime.utcnow(),
+                                        submitted_at=datetime.utcnow(),
+                                        time_taken_seconds=300
                                     )
-                                    db.add(sub)
+                                    db.add(att)
+                                    db.commit()
+                                    db.refresh(att)
                                     
-                        # Find tests
-                        tests_list = db.query(Test).filter(Test.course_id == course.id).all()
-                        for test in tests_list:
-                            att = db.query(TestAttempt).filter(
-                                TestAttempt.test_id == test.id,
-                                TestAttempt.student_id == stud_obj.id
-                            ).first()
-                            if not att:
-                                att = TestAttempt(
-                                    test_id=test.id,
-                                    student_id=stud_obj.id,
-                                    attempt_number=1,
-                                    started_at=datetime.utcnow(),
-                                    submitted_at=datetime.utcnow(),
-                                    time_taken_seconds=300
-                                )
-                                db.add(att)
-                                db.commit()
-                                db.refresh(att)
-                                
-                                # score based on course code
-                                pct = 80.0
-                                if "CS3702" in course.course_code:
-                                    pct = 90.0
-                                elif "CS3703" in course.course_code:
-                                    pct = 70.0
-                                    
-                                res = TestResult(
-                                    attempt_id=att.id,
-                                    score=float(pct/10),
-                                    total_questions=10,
-                                    correct_answers=int(pct/10),
-                                    wrong_answers=10 - int(pct/10),
-                                    percentage=pct
-                                )
-                                db.add(res)
+                                    # score based on course code
+                                    pct = 80.0
+                                    if "CS3702" in course.course_code or "CS3502" in course.course_code:
+                                        pct = 90.0
+                                    elif "CS3703" in course.course_code or "CS3503" in course.course_code:
+                                        pct = 70.0
+                                        
+                                    res = TestResult(
+                                        attempt_id=att.id,
+                                        score=float(pct/10),
+                                        total_questions=10,
+                                        correct_answers=int(pct/10),
+                                        wrong_answers=10 - int(pct/10),
+                                        percentage=pct
+                                    )
+                                    db.add(res)
             db.commit()
 
         # 9. Seed Admin / Staff User
@@ -502,6 +546,29 @@ def seed_db(db: Session):
             )
             db.add(staff_user)
             db.commit()
+
+        # Seed Kapil, Madhubala, Selvarani
+        staff_members_data = [
+            ("Kapil", "kapil@college.edu", "Deep Learning, Machine Learning, Natural Language Processing"),
+            ("Madhubala", "madhubala@college.edu", "Agentic AI, Computer Networks"),
+            ("Selvarani", "selvarani@college.edu", "Big Data Analytics, Manufacturing AI")
+        ]
+        for s_name, s_email, s_dept in staff_members_data:
+            s_user = db.query(AdminUser).filter(AdminUser.email == s_email).first()
+            if not s_user:
+                s_user = AdminUser(
+                    full_name=s_name,
+                    email=s_email,
+                    password_hash=hash_password("staff123"),
+                    role="staff",
+                    department=s_dept,
+                    is_active=True
+                )
+                db.add(s_user)
+            else:
+                s_user.department = s_dept
+                s_user.password_hash = hash_password("staff123")
+        db.commit()
 
         print("[DATABASE SEED] Seed operation completed successfully.")
     except Exception as e:

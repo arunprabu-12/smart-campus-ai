@@ -39,6 +39,16 @@ export default function TopNav() {
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path))
   )?.[1] || '📄 Page'
 
+  const [latency, setLatency] = useState(null)
+
+  useEffect(() => {
+    const handleLatency = (e) => {
+      setLatency(e.detail)
+    }
+    window.addEventListener('api_latency', handleLatency)
+    return () => window.removeEventListener('api_latency', handleLatency)
+  }, [])
+
   // Close menu on outside click
   useEffect(() => {
     function handler(e) {
@@ -114,6 +124,30 @@ export default function TopNav() {
         }}>
           🤗 Qwen3-8B
         </div>
+
+        {/* Latency Performance Indicator */}
+        {latency !== null && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            background: latency < 150 ? 'rgba(16, 185, 129, 0.15)' : latency < 350 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            border: `1px solid ${latency < 150 ? 'rgba(16, 185, 129, 0.3)' : latency < 350 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            fontSize: '11px',
+            color: latency < 150 ? '#10b981' : latency < 350 ? '#f59e0b' : '#ef4444',
+            fontWeight: 600,
+            letterSpacing: '0.5px',
+          }} title="Latest API response time">
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: latency < 150 ? '#10b981' : latency < 350 ? '#f59e0b' : '#ef4444',
+              display: 'inline-block',
+            }} />
+            API: {latency}ms
+          </div>
+        )}
 
         {/* Theme toggle */}
         <button

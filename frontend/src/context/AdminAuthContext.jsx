@@ -10,6 +10,28 @@ const AdminAuthContext = createContext(null)
 
 const adminApi = axios.create({ baseURL: BASE_URL })
 
+adminApi.interceptors.request.use((config) => {
+  config.metadata = { startTime: new Date().getTime() }
+  return config
+})
+
+adminApi.interceptors.response.use(
+  (response) => {
+    if (response.config?.metadata?.startTime) {
+      const duration = new Date().getTime() - response.config.metadata.startTime
+      window.dispatchEvent(new CustomEvent('api_latency', { detail: duration }))
+    }
+    return response
+  },
+  (error) => {
+    if (error.config?.metadata?.startTime) {
+      const duration = new Date().getTime() - error.config.metadata.startTime
+      window.dispatchEvent(new CustomEvent('api_latency', { detail: duration }))
+    }
+    return Promise.reject(error)
+  }
+)
+
 export function AdminAuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('admin_token') || null)
   const [admin, setAdmin]   = useState(null)

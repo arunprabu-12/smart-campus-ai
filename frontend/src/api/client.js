@@ -9,13 +9,24 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  config.metadata = { startTime: new Date().getTime() }
   return config
 })
 
 // Handle 401 globally — clear token and redirect to login
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config?.metadata?.startTime) {
+      const duration = new Date().getTime() - response.config.metadata.startTime
+      window.dispatchEvent(new CustomEvent('api_latency', { detail: duration }))
+    }
+    return response
+  },
   (error) => {
+    if (error.config?.metadata?.startTime) {
+      const duration = new Date().getTime() - error.config.metadata.startTime
+      window.dispatchEvent(new CustomEvent('api_latency', { detail: duration }))
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       // Only redirect if not already on auth pages
