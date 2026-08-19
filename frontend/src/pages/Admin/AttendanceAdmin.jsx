@@ -27,7 +27,14 @@ export default function AttendanceAdmin() {
           const staffName = admin.full_name || ''
           const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
           
+          const isDeptLevel = assignedCourses.some(assigned => 
+            assigned.includes("artificial intelligence") || 
+            assigned.includes("data science") ||
+            assigned === "aids"
+          )
+
           fetchedCourses = fetchedCourses.filter(c => {
+            if (isDeptLevel) return true
             const courseName = c.course_name || ''
             const courseCode = c.course_code || ''
             

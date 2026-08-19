@@ -99,16 +99,24 @@ export default function Courses() {
       
       const assignedCourses = staffDept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
       
-      const courseName = c.course_name || '';
-      const courseCode = c.course_code || '';
-
-      const matchesAssigned = assignedCourses.some(assigned => 
-        courseName.toLowerCase().includes(assigned) || 
-        assigned.includes(courseName.toLowerCase()) ||
-        courseCode.toLowerCase().includes(assigned)
+      const isDeptLevel = assignedCourses.some(assigned => 
+        assigned.includes("artificial intelligence") || 
+        assigned.includes("data science") ||
+        assigned === "aids"
       );
-      
-      if (!matchesAssigned) return false;
+
+      if (!isDeptLevel) {
+        const courseName = c.course_name || '';
+        const courseCode = c.course_code || '';
+
+        const matchesAssigned = assignedCourses.some(assigned => 
+          courseName.toLowerCase().includes(assigned) || 
+          assigned.includes(courseName.toLowerCase()) ||
+          courseCode.toLowerCase().includes(assigned)
+        );
+        
+        if (!matchesAssigned) return false;
+      }
     }
     
     return true

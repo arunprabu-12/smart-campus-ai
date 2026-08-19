@@ -418,7 +418,6 @@ def seed_db(db: Session):
                     s_obj.current_semester = sem
                     s_obj.full_name = name
                     s_obj.college_email = email
-                    s_obj.password_hash = hash_password(pwd)
             db.commit()
 
             # Seed Semester Completion up to (current_semester - 1) to show GPA trends
@@ -567,7 +566,6 @@ def seed_db(db: Session):
                 db.add(s_user)
             else:
                 s_user.department = s_dept
-                s_user.password_hash = hash_password("staff123")
         db.commit()
 
         print("[DATABASE SEED] Seed operation completed successfully.")

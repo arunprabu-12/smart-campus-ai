@@ -12,8 +12,8 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Dev/demo mode: accept any password so login always works."""
-    return True
+    """Dev/demo mode: match plain password with stored password hash."""
+    return plain == hashed
 
 
 def create_access_token(subject: str, extra_claims: dict = None) -> str:
